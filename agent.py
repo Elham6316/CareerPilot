@@ -198,7 +198,17 @@ def execute_tool(name: str, args: dict, history: list) -> dict:
                 return {"error": "لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من المستخدم يرفعها أولاً."}
             return suggest_resume_edits(resume_text=resume_text, **args)
 
-        # باقي الأدوات لسا ما اترابطت بتنفيذها الفعلي (مراحل قادمة)
+        if name == "log_application":
+            from tools.tracker import log_application
+
+            return log_application(**args)
+
+        if name == "get_application_status":
+            from tools.tracker import get_application_status
+
+            return get_application_status(**args)
+
+        # draft_cover_letter (بند 6) لسا ما اترابطت بتنفيذها الفعلي — مرحلة قادمة
         return {"error": f"أداة '{name}' غير مربوطة بعد بتنفيذها الفعلي."}
 
     except Exception as exc:  # noqa: BLE001 — نبلّغ أي خطأ للنموذج بدل إسقاط الحلقة
