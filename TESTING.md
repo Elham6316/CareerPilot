@@ -276,9 +276,88 @@ Python) في **نفس المحادثة المستمرة**، أرسلت: `"عدّ
   نص الاقتراح فقط كقيمة (`dict`) عبر `function_response`، ولا يوجد أي
   `open(..., "w")` في `tools/resume_matcher.py` إطلاقاً.
 
-### الخلاصة
+### الخلاصة (قبل الإصلاح)
 الأداة مربوطة وتعمل ضمن التسلسل الكامل بدون تدخل يدوي، ولا تكتب أي ملف
 (يطابق rule 5). لكن المراجعة البشرية المطلوبة كشفت **اختلاقاً فعلياً واحداً**
 ("mentoring team members") رغم التحذير الصريح في الـ prompt — هذا يوثّق
 بالضبط أهمية "مراجعة بشرية لنتائج الذكاء الاصطناعي" كخطوة لا يمكن تخطيها،
 ويستحق معالجة/تقوية إضافية قبل اعتبار هذي الأداة "جاهزة للعرض" بثقة كاملة.
+
+---
+
+## إصلاح الاختلاق عبر Grounding (تعليمات، لا كود يدوي يفلتر النص)
+
+**التغيير في `SUGGEST_EDITS_PROMPT`** (`tools/resume_matcher.py`): أضفت
+قاعدة صريحة تلزم النموذج أن كل جملة يكتبها لازم تستند لسطر أو عبارة موجودة
+حرفياً بالسيرة الأصلية، وتحديداً: *"قبل ما تكتب أي جملة، تأكد أنك تقدر تشير
+لمصدرها بالسيرة الأصلية — لو ما تقدر، لا تكتبها، حتى لو الوظيفة تطلبها."*
+وأضفت طلب إشارة مصدر بعد كل جملة بالشكل `[مبني على: "..."]` (البند
+الاختياري رقم 2). كذلك أضفت `MANDATORY_REVIEW_WARNING` كحقل ثابت `warning`
+يرجع دائماً مع كل استدعاء لـ `suggest_resume_edits` بغض النظر عن جودة
+الاقتراح (طبقة أمان إضافية، بند 5 من الطلب)، وأضفت سطرين في
+`SYSTEM_INSTRUCTION` (`agent.py`) يلزمان النموذج يعرض التحذير وإشارات
+المصدر حرفياً في رده النهائي للمستخدم بدل حذفها.
+
+### حالة اختبار 14 — إعادة اختبار بعد إصلاح الاختلاق (قبل/بعد)
+أعدت **بالضبط نفس سيناريو حالة اختبار 11-12**: نفس محادثة Yassir (سيرة
+Sara → اختيار Backend Developer → بحث بالرياض → تقييم الوظيفة الأولى
+[45/100] → "عدّل السيرة عشان تناسب هذي الوظيفة أكثر").
+
+**النص المقترح الجديد (كامل، كما رجع فعلياً من الأداة، ثم كما عُرض
+للمستخدم حرفياً بما فيه الإشارات):**
+> "Software Engineer with 4 years of experience specializing in backend
+> development and the design of REST APIs and data pipelines. [مبني على:
+> "Backend-focused software engineer with 4 years of experience building
+> and maintaining REST APIs and data pipelines"]
+>
+> Proven track record in driving technical delivery, evidenced by
+> designing and shipping 12+ REST endpoints and migrating monolithic
+> services into Dockerized microservices on AWS. [مبني على: "Designed and
+> shipped 12+ REST endpoints" و "Migrated a monolithic order-processing
+> service into three Dockerized microservices deployed on AWS ECS"]
+>
+> Experienced in enhancing system performance, having successfully cut
+> checkout latency by 30% and reduced production regressions by 40%
+> through automated testing. [مبني على: "cutting average checkout latency
+> by 30%" و "reduced production regressions by roughly 40%"]
+>
+> Collaborative professional with a background in Agile/Scrum team
+> environments, including sprint planning and code reviews. [مبني على:
+> "Collaborated with a 5-person team using Agile/Scrum, participating in
+> sprint planning and code reviews."]"
+
+**جدول المقارنة البشرية (نفس أسلوب حالة اختبار 12، جملة بجملة):**
+
+| جملة في الاقتراح | إشارة المصدر المرفقة | تحققت يدوياً من مطابقتها للسيرة الأصلية؟ |
+|---|---|---|
+| "Software Engineer with 4 years of experience... REST APIs and data pipelines" | "Backend-focused software engineer with 4 years of experience building and maintaining REST APIs and data pipelines" | ✅ مطابقة شبه حرفية للـ Summary الأصلي |
+| "designing and shipping 12+ REST endpoints" | "Designed and shipped 12+ REST endpoints" | ✅ مطابقة حرفية تماماً |
+| "migrating monolithic services into Dockerized microservices on AWS" | "Migrated a monolithic order-processing service into three Dockerized microservices deployed on AWS ECS" | ✅ مطابقة حرفية تماماً |
+| "cut checkout latency by 30%" | "cutting average checkout latency by 30%" | ✅ مطابقة حرفية تماماً |
+| "reduced production regressions by 40% through automated testing" | "reduced production regressions by roughly 40%" (+ "Wrote automated integration tests (pytest)" ضمنياً) | ✅ مطابقة صحيحة |
+| "Agile/Scrum team environments, including sprint planning and code reviews" | "Collaborated with a 5-person team using Agile/Scrum, participating in sprint planning and code reviews." | ✅ مطابقة حرفية تماماً |
+
+**لا وجود إطلاقاً لأي جملة عن "mentoring" أو أي ادّعاء آخر غير موجود
+بالسيرة الأصلية في هذي الإعادة.** كل الإشارات المرفقة صحيحة وقابلة
+للتحقق بنظرة سريعة (بدون الحاجة لقراءة السيرة كاملة سطراً بسطر يدوياً كل
+مرة) — هذا يحقق فعلياً الهدف من البند الاختياري رقم 2.
+
+كذلك تحقق ظهور التحذير الثابت **"⚠️ راجع هذا الاقتراح بعناية قبل استخدامه
+فعلياً"** حرفياً في الرد النهائي للمستخدم، وأضاف النموذج بصدق ملاحظة
+منفصلة (غير مندرجة كادّعاء عن خبرة سارة) تقترح إضافة مشاريع شخصية بـ
+NodeJS/Go إن وُجدت — وهذا تعامل صحيح وشفاف مع فجوة التقنيات بدل اختلاقها.
+
+**ملاحظة جانبية اكتُشفت ثم عولجت أثناء نفس هذي الإعادة**: أول محاولة من
+الإصلاح أظهرت أن `suggested_text` الخام (من الأداة) كان يحتوي إشارات
+`[مبني على: ...]` صحيحة، لكن رد النموذج النهائي للمستخدم كان يحذفها عند
+إعادة الصياغة قبل العرض — ما يُفقد فائدة البند 2. أضفت سطراً صريحاً في
+`SYSTEM_INSTRUCTION` يلزم النموذج يعرض الإشارات كما هي بدون حذف، وأعدت
+الاختبار (النتيجة أعلاه) فتأكدت أن الإشارات تصل فعلياً للمستخدم في الرد
+النهائي، لا فقط في نتيجة الأداة الداخلية.
+
+### الخلاصة (بعد الإصلاح)
+**المشكلة انحلّت كلياً في هذي الإعادة** — لا اختلاق ظاهر، كل جملة لها
+مصدر حرفي صحيح وقابل للتحقق، والتحذير الثابت يظهر دائماً. مع ذلك، هذا
+اختبار واحد إضافي (وليس ضمانة رياضية 100%) — النموذج قد يختلق أحياناً في
+محادثات أخرى رغم الـ grounding، ولهذا بقي التحذير الثابت "راجع بعناية"
+كطبقة أمان دائمة بغض النظر عن جودة الإصلاح، تماماً كما طلب البند 5.
