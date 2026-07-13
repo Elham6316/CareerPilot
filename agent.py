@@ -10,6 +10,29 @@ from google.genai import types
 from tools.gemini_client import MODEL_NAME, get_client
 from tools.resume_parser import extract_resume_text
 
+# نص السيرة الذاتية يُرسل مرة واحدة ضمن أول رسالة مستخدم (بين هذين الفاصلين)،
+# وأي أداة تحتاجه لاحقاً (evaluate_match مثلاً) تستخرجه من history بدل أن
+# يُعيد النموذج كتابته كوسيط في كل استدعاء.
+RESUME_START_MARKER = "[بداية نص السيرة الذاتية المستخرجة من PDF]"
+RESUME_END_MARKER = "[نهاية نص السيرة الذاتية]"
+
+
+def wrap_resume_text(resume_text: str) -> str:
+    return f"{RESUME_START_MARKER}\n{resume_text}\n{RESUME_END_MARKER}\n\n"
+
+
+def _get_resume_text_from_history(history: list) -> str | None:
+    for content in history:
+        if content.role != "user":
+            continue
+        for part in content.parts:
+            if part.text and RESUME_START_MARKER in part.text and RESUME_END_MARKER in part.text:
+                start = part.text.index(RESUME_START_MARKER) + len(RESUME_START_MARKER)
+                end = part.text.index(RESUME_END_MARKER)
+                return part.text[start:end].strip()
+    return None
+
+
 # ------------------------------------------------------------------
 # 1. تعريف الأدوات كـ schemas يفهمها Gemini
 #    (التنفيذ الفعلي لكل دالة يُستورد من tools/ عبر execute_tool)
@@ -140,7 +163,7 @@ _config = types.GenerateContentConfig(
 )
 
 
-def execute_tool(name: str, args: dict) -> dict:
+def execute_tool(name: str, args: dict, history: list) -> dict:
     """يوجّه كل اسم أداة لتنفيذها الفعلي من tools/. أي استثناء يُلتقط هنا
     ويُرجع كرسالة خطأ عادية (rule 6 في CLAUDE.md) بدل تعطيل حلقة الوكيل."""
     try:
@@ -153,6 +176,14 @@ def execute_tool(name: str, args: dict) -> dict:
             from tools.job_search import search_jobs
 
             return search_jobs(**args)
+
+        if name == "evaluate_match":
+            from tools.resume_matcher import evaluate_match
+
+            resume_text = _get_resume_text_from_history(history)
+            if not resume_text:
+                return {"error": "لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من المستخدم يرفعها أولاً."}
+            return evaluate_match(resume_text=resume_text, **args)
 
         # باقي الأدوات لسا ما اترابطت بتنفيذها الفعلي (مراحل قادمة)
         return {"error": f"أداة '{name}' غير مربوطة بعد بتنفيذها الفعلي."}
@@ -194,7 +225,7 @@ def run_agent(user_message: str, conversation_history: list = None) -> tuple[str
 
         response_parts = []
         for call in function_calls:
-            result = execute_tool(call.name, dict(call.args))
+            result = execute_tool(call.name, dict(call.args), history)
             response_parts.append(
                 types.Part.from_function_response(name=call.name, response={"result": result})
             )
@@ -213,7 +244,7 @@ if __name__ == "__main__":
     if resume_path:
         try:
             resume_text = extract_resume_text(resume_path)
-            pending_prefix = f"[نص السيرة الذاتية المستخرج من PDF]:\n{resume_text}\n\n"
+            pending_prefix = wrap_resume_text(resume_text)
             print("تم استخراج نص السيرة الذاتية بنجاح.\n")
         except Exception as exc:
             print(f"تعذّر استخراج نص PDF: {exc}\n")

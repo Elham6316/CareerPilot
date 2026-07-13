@@ -147,3 +147,65 @@ Google يطلب الانتقال لـ `google-genai`).
 - **الخلاصة**: التحسين نجح — تم حل المشكلة عبر تعليمات للنموذج (prompt)
   وليس عبر كود تحويل يدوي، متوافق مع مبدأ CLAUDE.md الأساسي (القرار من
   داخل حلقة النموذج، لا من منطق if/else مكتوب).
+
+---
+
+## بند 5 — أداة `evaluate_match`
+
+### ملاحظة تصميم: من أين يجي resume_text؟
+شيمة `evaluate_match` في `TOOLS_SCHEMA` تأخذ `job_description` فقط (بدون
+`resume_text`) — لأن السيرة الذاتية أصلاً موجودة في `history` منذ أول رسالة
+(انظر `wrap_resume_text()` في `agent.py`، تحيط النص بفاصلين واضحين
+`RESUME_START_MARKER`/`RESUME_END_MARKER`). `execute_tool()` يستخرج النص
+تلقائياً من `history` عبر `_get_resume_text_from_history()` قبل ما يستدعي
+`tools/resume_matcher.evaluate_match()` — هذا IO/plumbing بحت (استخراج نص
+من سياق محادثة)، وليس "قراراً" يحتاج منطقاً ذكياً، فمن المقبول يكون كوداً
+يدوياً بسيطاً حسب مبدأ CLAUDE.md.
+
+### حالة اختبار 9 — `evaluate_match` مباشرة وحالات الحافة (rule 6)
+- **استدعاء طبيعي**: `evaluate_match(job_description="...", resume_text=
+  demo_resume_text)` رجّع تحليلاً دلالياً حقيقياً (ليس مطابقة كلمات) —
+  راجع حالة اختبار 10 لمثال فعلي كامل.
+- **job_description فاضي**: `evaluate_match("", resume_text)` → رجّع
+  `{'error': 'وصف الوظيفة فاضي — أعطني وصف الوظيفة المطلوب تقييمها أولاً.'}`
+  بدل استثناء.
+- **resume_text فاضي**: `evaluate_match("some job", "")` → رجّع
+  `{'error': 'لا توجد سيرة ذاتية متاحة لمقارنتها بهذه الوظيفة.'}`.
+- **استدعاء عبر execute_tool بدون سيرة محمّلة في history أصلاً**:
+  `execute_tool("evaluate_match", {"job_description": "Some job"}, [])` →
+  `{'error': 'لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من
+  المستخدم يرفعها أولاً.'}` — كل الحالات رسائل عادية للنموذج، لا انهيار.
+
+### حالة اختبار 10 — التسلسل الكامل المطلوب (استكمال محادثة حالة اختبار 8)
+استكملت **نفس محادثة** حالة اختبار 8 (سيرة Sara Al-Otaibi → اختيار Backend
+Developer → 5 نتائج بحث حقيقية في الرياض)، وأرسلت رسالة جديدة:
+`"قيّم لي الوظيفة الأولى، شو رأيك تناسبني؟"` (بدون ذكر اسم الوظيفة صراحة).
+
+- **أ. الفهم**: تحقق عبر `history` أن النموذج فهم أن "الوظيفة الأولى" تقصد
+  أول نتيجة في `search_jobs` السابقة تحديداً: **"Staff Backend Engineer
+  (NodeJS/Go)" لدى شركة Yassir** — بدون أي تلميح إضافي مني.
+- **ب. الاستدعاء**: نفّذ
+  `function_call=evaluate_match({'job_description': 'Staff Backend Engineer
+  (NodeJS/Go) at Yassir. Responsibilities include driving technical
+  strategy, mentoring junior developers...'})` — بنى وصف الوظيفة بنفسه من
+  الـ snippet المتاح (Jooble لا يعطي وصفاً كاملاً، فقط مقتطفاً)، ثم
+  `execute_tool` استخرج `resume_text` تلقائياً من `history` ومرّرها لـ
+  `evaluate_match`.
+- **ج. النتيجة الفعلية من Gemini**: `{'match_score': 45, 'reasoning': "The
+  candidate has a solid backend foundation but lacks the seniority required
+  for a 'Staff' level role... Additionally, there is a technical stack
+  mismatch, as the role requires NodeJS/Go expertise, while the candidate's
+  experience is primarily in the Python ecosystem."}` — **تحليل دلالي حقيقي**
+  وليس مطابقة كلمات: ميّز بين "Backend" (تطابق سطحي) و"Staff-level seniority"
+  و"NodeJS/Go vs Python" (تعارض فعلي في التقنيات وسنوات الخبرة).
+- **الرد النهائي للمستخدم**: عرض بالعربية أن التوافق ضعيف، وشرح السببين
+  (مستوى الخبرة المطلوب Staff = 8+ سنوات مقابل خبرة سارة 4 سنوات، واختلاف
+  التقنيات NodeJS/Go مقابل Python)، واقترح بديلاً ("Senior Backend
+  Developer" بـ Python) وعرض بحثاً جديداً — رد واضح ومفيد يتجاوز مجرد رقم.
+
+### الخلاصة
+بند 5 مكتمل بالكامل: تحليل دلالي حقيقي عبر Gemini (لا مطابقة كلمات مفتاحية
+بكود بايثون)، معالجة حالات الحافة كرسائل عادية (rule 6)، مربوطة في
+`execute_tool()`، والتسلسل الكامل (بحث → "قيّم لي الوظيفة الأولى" → فهم
+المرجع → استدعاء `evaluate_match` → عرض النتيجة) يعمل بقرار كامل من النموذج
+بدون أي تدخل يدوي بيني وبين الخطوات.
