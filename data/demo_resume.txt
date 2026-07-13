@@ -1,0 +1,34 @@
+Sara Al-Otaibi
+Software Engineer
+Email: sara.demo@example.com | Phone: +966 5X XXX XXXX | Riyadh, Saudi Arabia
+
+Summary
+Backend-focused software engineer with 4 years of experience building and
+maintaining REST APIs and data pipelines for e-commerce platforms. Comfortable
+working across the stack, with a recent focus on Python microservices and
+cloud deployment on AWS.
+
+Experience
+Backend Developer - Falcon Retail Tech (2022 - Present)
+- Designed and shipped 12+ REST endpoints (FastAPI) powering the mobile
+  checkout flow, cutting average checkout latency by 30%.
+- Migrated a monolithic order-processing service into three Dockerized
+  microservices deployed on AWS ECS.
+- Wrote automated integration tests (pytest) that reduced production
+  regressions by roughly 40% quarter over quarter.
+
+Junior Developer - Nakhla Software House (2020 - 2022)
+- Built internal tooling in Python and Django for inventory tracking used by
+  35+ warehouse staff.
+- Collaborated with a 5-person team using Agile/Scrum, participating in
+  sprint planning and code reviews.
+
+Education
+B.Sc. in Computer Science - King Saud University (2016 - 2020)
+
+Skills
+Python, FastAPI, Django, PostgreSQL, Docker, AWS (ECS, S3, RDS), Git, REST API
+design, pytest, basic React for internal dashboards.
+
+Languages
+Arabic (native), English (fluent)
