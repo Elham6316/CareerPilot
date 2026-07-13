@@ -2,3 +2,5 @@ google-genai
 python-dotenv
 pypdf
 fpdf2
+requests
+pip-system-certs

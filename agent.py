@@ -145,6 +145,11 @@ def execute_tool(name: str, args: dict) -> dict:
 
             return suggest_job_titles(**args)
 
+        if name == "search_jobs":
+            from tools.job_search import search_jobs
+
+            return search_jobs(**args)
+
         # باقي الأدوات لسا ما اترابطت بتنفيذها الفعلي (مراحل قادمة)
         return {"error": f"أداة '{name}' غير مربوطة بعد بتنفيذها الفعلي."}
 
