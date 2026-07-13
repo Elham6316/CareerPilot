@@ -209,3 +209,76 @@ Developer → 5 نتائج بحث حقيقية في الرياض)، وأرسلت
 `execute_tool()`، والتسلسل الكامل (بحث → "قيّم لي الوظيفة الأولى" → فهم
 المرجع → استدعاء `evaluate_match` → عرض النتيجة) يعمل بقرار كامل من النموذج
 بدون أي تدخل يدوي بيني وبين الخطوات.
+
+---
+
+## بند 7 — أداة `suggest_resume_edits`
+
+### حالة اختبار 11 — استكمال نفس المحادثة (حالة اختبار 10) بطلب تعديل السيرة
+بعد نتيجة `evaluate_match` (الدرجة 45، الفجوة: مستوى Staff + NodeJS/Go مقابل
+Python) في **نفس المحادثة المستمرة**، أرسلت: `"عدّل السيرة عشان تناسب هذي
+الوظيفة أكثر"` (بدون تحديد وظيفة صراحة).
+
+- **الاستدعاء الفعلي عبر history**:
+  `function_call=suggest_resume_edits({'target_section': 'summary',
+  'job_description': 'Staff Backend Engineer (NodeJS/Go) at Yassir:
+  Responsible for driving technical direction, mentoring junior developers,
+  and contributing to scaling up backend systems...'})` — النموذج فهم
+  تلقائياً إنه نفس وظيفة Yassir من `evaluate_match` السابقة، بدون أي تلميح
+  إضافي مني، واستخدم `target_section` الافتراضي "summary" لأني ما حددت قسماً.
+- **execute_tool** استخرج `resume_text` من `history` تلقائياً (نفس آلية
+  `evaluate_match`) ومرّرها لـ `suggest_resume_edits`.
+- **النص المقترح الكامل الذي رجع فعلياً**:
+  > "Software Engineer with 4 years of experience specializing in backend
+  > development and system architecture. Proven track record in scaling
+  > systems by migrating monolithic services into Dockerized microservices
+  > on AWS and optimizing API performance to reduce checkout latency.
+  > Experienced in building robust data pipelines and REST APIs, with a
+  > strong foundation in Python-based microservices, automated testing, and
+  > agile collaboration. Committed to driving technical efficiency and
+  > mentoring team members to achieve scalable, high-performance solutions."
+- **الرد النهائي للمستخدم**: عرض الاقتراح بوضوح كـ"اقتراح" (بلوك اقتباس)،
+  مع سؤال "هل يعجبك هذا التوجه؟" — لم يفترض موافقة، ولم يكتب أي شيء على أي
+  ملف.
+
+### حالة اختبار 12 — مراجعة بشرية صريحة لنتيجة الذكاء الاصطناعي (مطلوبة رسمياً)
+راجعت أنا (وليس بالكود) النص المقترح أعلاه جملة جملة مقابل
+`data/demo_resume.txt` الأصلي:
+
+| جملة في الاقتراح | موجودة أصلاً في السيرة الحقيقية؟ |
+|---|---|
+| "4 years of experience... backend development" | ✅ مطابقة لـ "Backend-focused software engineer with 4 years of experience" |
+| "migrating monolithic services into Dockerized microservices on AWS" | ✅ مطابقة تماماً لسطر الخبرة: "Migrated a monolithic order-processing service into three Dockerized microservices deployed on AWS ECS" |
+| "optimizing API performance to reduce checkout latency" | ✅ مطابقة لـ "cutting average checkout latency by 30%" |
+| "building robust data pipelines and REST APIs" | ✅ مطابقة لنص الـ Summary الأصلي حرفياً تقريباً |
+| "strong foundation in Python-based microservices" | ✅ مطابقة لـ "recent focus on Python microservices" |
+| "automated testing" | ✅ مطابقة لـ "Wrote automated integration tests (pytest)" |
+| "agile collaboration" | ✅ مطابقة لـ "Collaborated with a 5-person team using Agile/Scrum" |
+| **"mentoring team members"** | ❌ **غير موجودة إطلاقاً في السيرة الأصلية** — سارة لم تذكر أي خبرة إشراف/توجيه لأحد. هذي عبارة **مُختلَقة**، على الأغلب "تسربت" من وصف الوظيفة نفسها (Yassir تطلب "mentoring junior developers") بدل من خبرة سارة الفعلية |
+| "specializing in... system architecture" | ⚠️ صياغة أوسع من المذكور حرفياً، لكن مبررة بشكل معقول من عملية الـ migration المذكورة فعلاً — إعادة صياغة، لا اختلاق واضح |
+
+**⚠️ نتيجة المراجعة البشرية: فشل جزئي في اتباع تحذير "عدم الاختلاق".**
+رغم أن الـ prompt في `SUGGEST_EDITS_PROMPT` يحتوي تحذيراً صريحاً وقوياً بعدم
+اختلاق أي خبرة غير موجودة، النموذج أضاف عبارة "mentoring team members" وهي
+غير صحيحة عن سارة إطلاقاً. هذا بالضبط نوع الخطأ اللي "المراجعة البشرية"
+مصممة تلتقطه قبل ما يوصل لأي استخدام فعلي — **لا يجوز اعتماد اقتراح
+`suggest_resume_edits` تلقائياً بدون قراءة بشرية دقيقة**، حتى مع وجود تحذير
+صريح في الـ prompt. يستحق نقاشاً لاحقاً هل نحتاج تقوية الـ prompt أكثر
+(مثلاً: اطلب من النموذج أن يبرر كل جملة بإشارة لسطر محدد من السيرة الأصلية)
+قبل اعتماد هذي الأداة نهائياً في العرض التقديمي/الفيديو.
+
+### حالة اختبار 13 — تأكيد عدم الكتابة على أي ملف فعلي
+قارنت SHA256 لملفي `data/demo_resume.txt` و `data/demo_resume.pdf` قبل
+وبعد تشغيل السيناريو الكامل (حالات اختبار 10-12):
+- قبل: `demo_resume.txt` = `30ceebd8...`, `demo_resume.pdf` = `1b3f136c...`
+- بعد: **نفس القيمتين تماماً** لكلا الملفين، ونفس وقت آخر تعديل (mtime) —
+  لم يُكتب أو يُعدَّل أي ملف على القرص خلال الاختبار بالكامل. الأداة رجعت
+  نص الاقتراح فقط كقيمة (`dict`) عبر `function_response`، ولا يوجد أي
+  `open(..., "w")` في `tools/resume_matcher.py` إطلاقاً.
+
+### الخلاصة
+الأداة مربوطة وتعمل ضمن التسلسل الكامل بدون تدخل يدوي، ولا تكتب أي ملف
+(يطابق rule 5). لكن المراجعة البشرية المطلوبة كشفت **اختلاقاً فعلياً واحداً**
+("mentoring team members") رغم التحذير الصريح في الـ prompt — هذا يوثّق
+بالضبط أهمية "مراجعة بشرية لنتائج الذكاء الاصطناعي" كخطوة لا يمكن تخطيها،
+ويستحق معالجة/تقوية إضافية قبل اعتبار هذي الأداة "جاهزة للعرض" بثقة كاملة.

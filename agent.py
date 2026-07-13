@@ -185,6 +185,14 @@ def execute_tool(name: str, args: dict, history: list) -> dict:
                 return {"error": "لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من المستخدم يرفعها أولاً."}
             return evaluate_match(resume_text=resume_text, **args)
 
+        if name == "suggest_resume_edits":
+            from tools.resume_matcher import suggest_resume_edits
+
+            resume_text = _get_resume_text_from_history(history)
+            if not resume_text:
+                return {"error": "لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من المستخدم يرفعها أولاً."}
+            return suggest_resume_edits(resume_text=resume_text, **args)
+
         # باقي الأدوات لسا ما اترابطت بتنفيذها الفعلي (مراحل قادمة)
         return {"error": f"أداة '{name}' غير مربوطة بعد بتنفيذها الفعلي."}
 

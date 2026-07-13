@@ -44,3 +44,50 @@ def evaluate_match(job_description: str, resume_text: str) -> dict:
 
     result = json.loads(response.text)
     return {"match_score": result.get("match_score"), "reasoning": result.get("reasoning")}
+
+
+SUGGEST_EDITS_PROMPT = """أنت خبير في كتابة السير الذاتية. اقترح صياغة جديدة
+لقسم "{target_section}" فقط من السيرة الذاتية التالية، بحيث تبرز نقاط
+التوافق الحقيقية مع الوظيفة المستهدفة أدناه.
+
+تحذير صارم وغير قابل للتفاوض: ممنوع اختلاق أي خبرة، مهارة، مسمى وظيفي،
+شركة، رقم، أو إنجاز غير موجود أصلاً في نص السيرة الذاتية أدناه. يُسمح فقط
+بإعادة الصياغة أو إعادة الترتيب أو التأكيد على ما هو موجود فعلاً فيها —
+ممنوع إضافة أي معلومة جديدة مهما بدت منطقية أو محتملة.
+
+أرجع نص القسم المقترح فقط، بدون أي شرح أو مقدمة أو JSON.
+
+نص السيرة الذاتية الكامل (للسياق):
+---
+{resume_text}
+---
+
+القسم المطلوب تعديل صياغته: {target_section}
+
+وصف الوظيفة المستهدفة:
+---
+{job_description}
+---
+"""
+
+
+def suggest_resume_edits(job_description: str, resume_text: str, target_section: str = "summary") -> dict:
+    """يقترح صياغة جديدة لقسم من السيرة الذاتية دون اختلاق معلومات. اقتراح
+    للعرض فقط — لا يكتب على أي ملف (rule 5 في CLAUDE.md)."""
+    if not job_description or not job_description.strip():
+        return {"error": "وصف الوظيفة فاضي — أعطني وصف الوظيفة المطلوب التعديل من أجلها أولاً."}
+
+    if not resume_text or not resume_text.strip():
+        return {"error": "لا توجد سيرة ذاتية متاحة لتعديلها."}
+
+    prompt = SUGGEST_EDITS_PROMPT.format(
+        resume_text=resume_text, job_description=job_description, target_section=target_section
+    )
+
+    response = get_client().models.generate_content(model=MODEL_NAME, contents=prompt)
+
+    return {
+        "target_section": target_section,
+        "suggested_text": response.text.strip(),
+        "note": "هذا اقتراح للعرض فقط — لن يُكتب على أي ملف إلا بموافقتك الصريحة.",
+    }
