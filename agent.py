@@ -198,6 +198,14 @@ def execute_tool(name: str, args: dict, history: list) -> dict:
                 return {"error": "لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من المستخدم يرفعها أولاً."}
             return suggest_resume_edits(resume_text=resume_text, **args)
 
+        if name == "draft_cover_letter":
+            from tools.cover_letter import draft_cover_letter
+
+            resume_text = _get_resume_text_from_history(history)
+            if not resume_text:
+                return {"error": "لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من المستخدم يرفعها أولاً."}
+            return draft_cover_letter(resume_text=resume_text, **args)
+
         if name == "log_application":
             from tools.tracker import log_application
 
@@ -208,8 +216,7 @@ def execute_tool(name: str, args: dict, history: list) -> dict:
 
             return get_application_status(**args)
 
-        # draft_cover_letter (بند 6) لسا ما اترابطت بتنفيذها الفعلي — مرحلة قادمة
-        return {"error": f"أداة '{name}' غير مربوطة بعد بتنفيذها الفعلي."}
+        return {"error": f"أداة '{name}' غير معروفة."}
 
     except Exception as exc:  # noqa: BLE001 — نبلّغ أي خطأ للنموذج بدل إسقاط الحلقة
         return {"error": f"فشلت أداة '{name}': {exc}"}
