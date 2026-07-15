@@ -107,10 +107,22 @@ async def send_message(
         if part.function_call
     ]
 
+    # القيم الخام لكل أداة (مش فقط اسمها) — الواجهة تحتاجها لتنسيق النتائج
+    # حسب نوع الأداة (بطاقات وظائف، درجة توافق، نص سيرة محسّنة...) بدل
+    # الاعتماد على تحليل نص Gemini الحر. القيمة نفسها تأتي من execute_tool
+    # في agent.py كما هي، بدون أي تعديل عليها هنا.
+    tool_results = [
+        {"name": part.function_response.name, "result": (part.function_response.response or {}).get("result")}
+        for content in updated_history[turn_start:]
+        for part in content.parts
+        if part.function_response
+    ]
+
     return JSONResponse(
         content={
             "reply": reply,
             "tool_calls": tool_calls,
+            "tool_results": tool_results,
             "request_count": session["request_count"],
             "request_limit": MAX_REQUESTS_PER_SESSION,
         }

@@ -2,9 +2,128 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CareerPilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <p>الـ backend شغّال. الواجهة (frontend) قيد الإنشاء — المرحلة القادمة.</p>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="topbar-brand">
+        <img src="/assets/logo.png" alt="CareerPilot" />
+        <span>CareerPilot</span>
+      </div>
+      <div class="counter-pill" id="counterPill">الطلبات: 0 / 6</div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-content">
+        <img class="logo" src="/assets/logo.png" alt="" />
+        <h1 class="hero-title">ابدأ رحلتك المهنية</h1>
+        <p class="hero-subtitle">مرشدك الذكي يبحث ويقيّم ويكتب نيابة عنك — بموافقتك دائماً</p>
+        <button class="hero-cta" id="heroCta">ارفعي سيرتك للبدء</button>
+      </div>
+      <div class="hero-deco">
+        <span class="hero-circle c1"></span>
+        <span class="hero-circle c2"></span>
+        <span class="hero-circle c3"></span>
+        <span class="hero-circle c4"></span>
+      </div>
+    </section>
+
+    <div id="uploadSection">
+      <div class="upload-card" id="uploadCard">
+        <h3 id="uploadIconSlot">ارفعي سيرتك الذاتية للبدء</h3>
+        <p>هذي الخطوة الأولى الإلزامية — بعدها تتفعّل كل الخدمات أدناه.</p>
+        <label class="upload-dropzone" id="dropzone" for="fileInput">
+          <p>اسحبي ملف PDF هنا أو اضغطي لاختياره</p>
+          <span>الحد الأقصى 200 ميغابايت</span>
+        </label>
+        <input type="file" id="fileInput" accept="application/pdf" />
+        <p class="upload-error hidden" id="uploadError"></p>
+      </div>
+
+      <div class="confirm-card hidden" id="confirmCard">
+        <span class="confirm-icon" id="confirmIconSlot"></span>
+        <div>
+          <strong>تم رفع السيرة الذاتية</strong>
+          <span id="confirmFilename"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="limit-card hidden" id="limitCard"></div>
+
+    <div class="services-grid" id="servicesGrid">
+      <!-- بطاقة: اقتراح مسميات وظيفية -->
+      <div class="service-card" data-card="titles">
+        <h3 class="service-card-title" id="iconTitles"></h3>
+        <p class="service-card-desc">تحليل سيرتك واقتراح مسميات تناسب خبراتك.</p>
+        <div class="service-card-spacer"></div>
+        <button class="btn" id="btnTitles" disabled>اقترح لي مسميات</button>
+      </div>
+
+      <!-- بطاقة: البحث عن وظائف -->
+      <div class="service-card" data-card="search">
+        <h3 class="service-card-title" id="iconSearch"></h3>
+        <p class="service-card-desc">ابحثي عن وظائف حقيقية حسب المسمى والمدينة.</p>
+        <div class="service-card-body">
+          <input class="field-input" id="searchTitleInput" placeholder="المسمى الوظيفي" disabled />
+          <input class="field-input" id="searchCityInput" placeholder="المدينة" disabled />
+        </div>
+        <button class="btn" id="btnSearch" disabled>ابحث الآن</button>
+      </div>
+
+      <!-- بطاقة: تقييم التوافق -->
+      <div class="service-card" data-card="match">
+        <h3 class="service-card-title" id="iconMatch"></h3>
+        <p class="service-card-desc">قيّمي مدى توافق سيرتك مع وظيفة من نتائج بحثك.</p>
+        <div class="service-card-body">
+          <span class="service-card-badge hidden" id="matchBadge">ابحثي عن وظائف أولاً</span>
+          <select class="select-input" id="matchSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
+        </div>
+        <button class="btn" id="btnMatch" disabled>قيّم التوافق</button>
+      </div>
+
+      <!-- بطاقة: تحسين السيرة -->
+      <div class="service-card emphasized" data-card="improve">
+        <h3 class="service-card-title" id="iconImprove"></h3>
+        <p class="service-card-desc">حسّني سيرتك لتتوافق مع وظيفة محددة بصياغة متوافقة مع ATS.</p>
+        <div class="service-card-body">
+          <span class="service-card-badge hidden" id="improveBadge">ابحثي عن وظائف أولاً</span>
+          <select class="select-input" id="improveSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
+        </div>
+        <button class="btn btn-accent" id="btnImprove" disabled>حسّن سيرتي</button>
+      </div>
+
+      <!-- بطاقة: خطاب تقديم -->
+      <div class="service-card" data-card="letter">
+        <h3 class="service-card-title" id="iconLetter"></h3>
+        <p class="service-card-desc">خطاب تقديم مخصص مبني على سيرتك الحقيقية.</p>
+        <div class="service-card-body">
+          <span class="service-card-badge hidden" id="letterBadge">ابحثي عن وظائف أولاً</span>
+          <select class="select-input" id="letterSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
+        </div>
+        <button class="btn" id="btnLetter" disabled>اكتب الخطاب</button>
+      </div>
+
+      <!-- بطاقة: تقديماتي -->
+      <div class="service-card" data-card="applications">
+        <h3 class="service-card-title" id="iconApplications"></h3>
+        <p class="service-card-desc">ملخص الوظائف اللي سجّلتِ تقديمك عليها.</p>
+        <div class="service-card-spacer"></div>
+        <button class="btn" id="btnApplications" disabled>اعرض تقديماتي</button>
+      </div>
+    </div>
+
+    <div class="results-card" id="resultsCard">
+      <div class="results-empty" id="resultsEmpty">نتائج الخدمة اللي تختارينها تظهر هنا.</div>
+      <div id="resultsContent"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
