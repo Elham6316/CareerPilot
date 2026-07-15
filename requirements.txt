@@ -5,3 +5,6 @@ fpdf2
 requests
 pip-system-certs
 streamlit
+fastapi
+uvicorn[standard]
+python-multipart
