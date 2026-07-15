@@ -78,20 +78,18 @@ TOOLS_SCHEMA = [
         },
     },
     {
-        "name": "suggest_resume_edits",
+        "name": "improve_resume",
         "description": (
-            "يقترح تعديلاً لقسم الـ Summary (ويمكن أقسام أخرى ذات صلة كالمهارات) "
-            "في السيرة الذاتية ليتناسب بشكل أفضل مع وظيفة معينة. يُرجع نص التعديل "
-            "المقترح فقط للعرض على المستخدم — لا يكتب فوق أي ملف مباشرة."
+            "يحسّن السيرة الذاتية تحسيناً شاملاً (Summary + Skills + أي قسم يحتاج "
+            "مواءمة) لتتناسب مع وظيفة معينة، بصياغة متوافقة مع أنظمة ATS وكلمات "
+            "مفتاحية من إعلان الوظيفة الموجودة فعلاً بخبرة المستخدم. يُرجع نص "
+            "السيرة المحسّنة + قائمة التغييرات بمصادرها، للعرض فقط — لا يكتب فوق "
+            "أي ملف مباشرة."
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "job_description": {"type": "string"},
-                "target_section": {
-                    "type": "string",
-                    "description": "القسم المطلوب تعديله، مثال: 'summary' أو 'skills'. افتراضي: summary",
-                },
             },
             "required": ["job_description"],
         },
@@ -151,13 +149,14 @@ SYSTEM_INSTRUCTION = """أنت CareerPilot، وكيل ذكاء اصطناعي ي
   هذي الصيغة تحديداً (سلوك موثّق فعلياً، راجع TESTING.md).
 - لا تستدعي log_application أبداً إلا بعد أن يؤكد المستخدم صراحة أنه يريد
   تسجيل هذا التقديم (كلمات مثل "نعم"، "سجّله"، "تم التقديم فعلاً").
-- suggest_resume_edits يُرجع اقتراحاً نصياً فقط للعرض — لا تعتبره تعديلاً
-  نهائياً تلقائياً، واعرضه للمستخدم بوضوح كـ "اقتراح" ينتظر رأيه.
-- عند عرض نتيجة suggest_resume_edits، اعرض دائماً حرفياً جملة التحذير
-  الموجودة في حقل "warning" ضمن ردك ("⚠️ راجع هذا الاقتراح بعناية قبل
-  استخدامه فعلياً") — حتى لو بدا الاقتراح جيداً. واعرض النص المقترح مع
-  إشارات "[مبني على: ...]" كما هي بدون حذفها أو تلخيصها، لتسهيل مراجعة
-  المستخدم لكل جملة بمصدرها الأصلي.
+- improve_resume يُرجع اقتراحاً للعرض فقط — لا تعتبره تعديلاً نهائياً
+  تلقائياً، واعرضه للمستخدم بوضوح كـ "اقتراح" ينتظر رأيه.
+- عند عرض نتيجة improve_resume، اعرض قائمة التغييرات (changes) مع إشارات
+  "[مبني على: ...]" كما هي بدون حذفها أو تلخيصها، لتسهيل مراجعة المستخدم
+  لكل تغيير بمصدره الأصلي. لا تحتاج تكرار نص السيرة المحسّنة كاملاً في ردك
+  إلا لو طلبه المستخدم صراحة. واعرض دائماً حرفياً جملة التحذير الموجودة في
+  حقل "warning" ("⚠️ راجع هذا الاقتراح بعناية قبل استخدامه فعلياً") — حتى
+  لو بدا الاقتراح جيداً.
 - إن فشلت أداة، أخبر المستخدم بوضوح واقترح بديلاً بدل التوقف الكامل.
 - كن مختصراً ومباشراً في ردودك النهائية.
 """
@@ -190,13 +189,13 @@ def execute_tool(name: str, args: dict, history: list) -> dict:
                 return {"error": "لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من المستخدم يرفعها أولاً."}
             return evaluate_match(resume_text=resume_text, **args)
 
-        if name == "suggest_resume_edits":
-            from tools.resume_matcher import suggest_resume_edits
+        if name == "improve_resume":
+            from tools.resume_matcher import improve_resume
 
             resume_text = _get_resume_text_from_history(history)
             if not resume_text:
                 return {"error": "لا توجد سيرة ذاتية محمّلة في هذي المحادثة بعد — اطلب من المستخدم يرفعها أولاً."}
-            return suggest_resume_edits(resume_text=resume_text, **args)
+            return improve_resume(resume_text=resume_text, **args)
 
         if name == "draft_cover_letter":
             from tools.cover_letter import draft_cover_letter

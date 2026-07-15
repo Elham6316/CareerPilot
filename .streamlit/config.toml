@@ -1,0 +1,24 @@
+# هوية CareerPilot البصرية — الألوان الأساسية عبر theming الرسمي،
+# والتفاصيل التي لا يغطيها config.toml (إخفاء شعار Streamlit، الظلال،
+# لون الـ accent) عبر CSS مخصص في app.py.
+
+[theme]
+base = "light"
+primaryColor = "#D3A0FD"
+backgroundColor = "#FAFAFA"
+secondaryBackgroundColor = "#F7F0FD"
+textColor = "#111111"
+borderColor = "#ECECEC"
+baseRadius = "16px"
+buttonRadius = "12px"
+linkColor = "#D3A0FD"
+showWidgetBorder = true
+font = "Cairo:https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap"
+
+[theme.sidebar]
+backgroundColor = "#F7F0FD"
+secondaryBackgroundColor = "#E8CFFF"
+borderColor = "#ECECEC"
+
+[server]
+headless = true
