@@ -51,20 +51,20 @@ h1, .display, .brand-name, .step-num, .count {
   overflow: hidden;
 }
 
-/* بلوبة خلفية عائمة على مستوى التطبيق كله، خلف كل المحتوى — وليست
-   محصورة بشاشة الرفع فقط. موضعها هالة خلف عمود رسم الهيرو تحديداً
-   (يسار مساحة العمل، حيث يقع الرسم بعد التقسيم لعمودين) بدل موضع عشوائي. */
+/* بلوبة خلفية عائمة عامة على مستوى التطبيق كله، خلف كل المحتوى — زخرفة
+   محيطية بحتة، لا ترتبط بموضع رسم الهيرو تحديداً (تلك مهمة .upload-hero-
+   circle الآن، الملتصقة بالرسم بنفس الوالد فتتحرك معه دوماً كوحدة واحدة
+   مهما تغيّر عرض الشاشة). موضع عام هنا فقط لتفادي تراكب الدائرتين. */
 .bg-blob {
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
-  width: 440px;
-  height: 440px;
-  left: 2%;
-  top: 50%;
-  margin-top: -220px;
-  opacity: 0.5;
+  width: 420px;
+  height: 420px;
+  top: -140px;
+  right: 24%;
+  opacity: 0.35;
   background: radial-gradient(circle at 35% 35%, var(--secondary), var(--purple-light) 72%);
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -291,28 +291,36 @@ h1, .display, .brand-name, .step-num, .count {
   justify-content: center;
 }
 
-.upload-illustration {
+/* الدائرة والرسم داخل والد واحد موضعه relative — يضمن أن يتحركا كوحدة
+   واحدة بأي عرض شاشة، بدل عنصرين منفصلين بوحدات قياس مختلفة (كانت
+   .bg-blob px ثابتة بموضع % من .app-shell، والرسم % من عمود flex مختلف
+   تماماً — ينحرفان عن بعض حتماً بأي عرض غير الذي عُوير عليه يدوياً). */
+.upload-hero-circle {
   position: relative;
+  width: clamp(220px, 30vw, 460px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--secondary), var(--purple-light) 72%);
+  opacity: 0.7;
+}
+
+.upload-illustration {
+  position: absolute;
   z-index: 1;
-  width: 100%;
-  min-width: 380px;
-  max-width: 480px;
+  top: 50%;
+  left: 50%;
+  width: 70%;
   height: auto;
-  /* محاذاة دقيقة لمركز البلوبة خلفها — قيست عبر getBoundingClientRect
-     فعلياً (مركز الرسم كان مزاحاً ~13px يميناً و~12px أعلى مركز البلوبة)،
-     عبر margin لا transform حتى لا تتصادم مع حركة الطفو أدناه. القيمة
-     مضاعفة عمداً (26/24 لا 13/12): `justify-content:center` بالحاوية
-     الأب يعيد توزيع نصف أي إزاحة margin كمساحة حرة متروكة، فتحقّق فعلياً
-     نصف القيمة المطلوبة فقط لو استُخدمت القيمة الأصلية (تحقق برمجي أكّد
-     ذلك: أول محاولة بقيم 13/12 حرّكت المركز 6.6/5.9px فقط، فضوعفت القيم). */
-  margin: 24px 0 0 -26px;
+  transform: translate(-50%, -50%);
 }
 @media (prefers-reduced-motion: no-preference) {
   .upload-illustration { animation: illustration-float 4s ease-in-out infinite; }
 }
+/* التمركز (translate -50%,-50%) مدموج بكل إطار حركة عمداً — لا يمكن ترك
+   الحركة تستبدل transform كاملاً وإلا فقدت التمركز عند كل دورة طفو. */
 @keyframes illustration-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-10px); }
 }
 .upload-title {
   font-weight: 800;
@@ -850,7 +858,11 @@ h1, .display, .brand-name, .step-num, .count {
   .upload-hero-text,
   .upload-hero-visual { flex: 0 0 auto; max-width: 100%; width: 100%; }
   .upload-hero-text { text-align: center; }
-  .upload-illustration { min-width: 0; width: min(320px, 80%); max-width: 320px; }
+  /* الدائرة تُحسب بـclamp() دوماً — لا تحتاج تجاوزاً هنا لتبقى محتوية
+     الرسم بلا فيض، فقط سقف أصغر يلائم التكديس الرأسي بعرض معتدل مركزي
+     (margin:auto لا justify-content هنا لأن .upload-hero-visual صار
+     بعرض 100% بعد التكديس). */
+  .upload-hero-circle { width: clamp(200px, 40vw, 300px); margin: 0 auto; }
   .dropzone { max-width: 480px; margin: 0 auto; }
 }
 
