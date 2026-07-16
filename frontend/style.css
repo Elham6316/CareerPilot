@@ -298,6 +298,14 @@ h1, .display, .brand-name, .step-num, .count {
   min-width: 380px;
   max-width: 480px;
   height: auto;
+  /* محاذاة دقيقة لمركز البلوبة خلفها — قيست عبر getBoundingClientRect
+     فعلياً (مركز الرسم كان مزاحاً ~13px يميناً و~12px أعلى مركز البلوبة)،
+     عبر margin لا transform حتى لا تتصادم مع حركة الطفو أدناه. القيمة
+     مضاعفة عمداً (26/24 لا 13/12): `justify-content:center` بالحاوية
+     الأب يعيد توزيع نصف أي إزاحة margin كمساحة حرة متروكة، فتحقّق فعلياً
+     نصف القيمة المطلوبة فقط لو استُخدمت القيمة الأصلية (تحقق برمجي أكّد
+     ذلك: أول محاولة بقيم 13/12 حرّكت المركز 6.6/5.9px فقط، فضوعفت القيم). */
+  margin: 24px 0 0 -26px;
 }
 @media (prefers-reduced-motion: no-preference) {
   .upload-illustration { animation: illustration-float 4s ease-in-out infinite; }
@@ -323,7 +331,11 @@ h1, .display, .brand-name, .step-num, .count {
   left: -3px;
   bottom: 2px;
   height: 13px;
-  background: var(--accent);
+  /* لون مُعايَن فعلياً بالبكسل من الملصق الأصفر داخل assets/hero-
+     illustration.png (سكربت Pillow، لا تخمين بصري) — #F8F179، مختلف
+     ملحوظاً عن --accent #ECFF70 (الأخير أخضر-ليموني أكثر)، لذا طُبِّق هنا
+     فقط محلياً ولم يُغيَّر --accent العام المستخدم بالأزرار/الشارات. */
+  background: #F8F179;
   z-index: -1;
   border-radius: 3px;
   transform: rotate(-1deg);
