@@ -262,7 +262,7 @@ function updateJobSelects() {
 }
 
 function updateMeter() {
-  document.getElementById("counterPill").textContent = `الطلبات ${requestCount}/${requestLimit}`;
+  document.getElementById("counterPill").textContent = `${requestCount}/${requestLimit}`;
   const pct = Math.min(100, (requestCount / requestLimit) * 100);
   document.getElementById("meterFill").style.width = `${pct}%`;
 }
@@ -464,6 +464,7 @@ function renderJobs(result, replyText) {
 function renderMatch(result, replyText, jobContext) {
   const score = result.match_score ?? 0;
   const tier = score >= 70 ? "high" : score >= 40 ? "mid" : "low";
+  const tierIcon = { high: "check", mid: "star", low: "arrow-up" }[tier];
   const container = document.getElementById("resultsContent");
   const followUps = jobContext
     ? `<div class="chain-actions">
@@ -473,7 +474,10 @@ function renderMatch(result, replyText, jobContext) {
     : "";
   container.innerHTML = `
     <div class="match-card">
-      <div class="match-score-badge ${tier}">${score}%</div>
+      <div class="match-score-wrap">
+        <div class="match-score-badge ${tier}">${score}%</div>
+        <div class="match-score-icon ${tier}">${icon(tierIcon, "#fff", 11)}</div>
+      </div>
       <div class="match-reasoning">${formatReplyText(result.reasoning || replyText)}</div>
     </div>
     ${followUps}`;

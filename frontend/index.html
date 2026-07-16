@@ -6,47 +6,68 @@
   <title>CareerPilot</title>
   <link rel="icon" type="image/png" href="/assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800&family=Almarai:wght@300;400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app-shell">
+    <div class="bg-blob" aria-hidden="true"></div>
+
     <!-- ================= الشريط الجانبي (يمين) ================= -->
     <aside class="sidebar disabled" id="sidebar">
       <div class="sidebar-brand">
-        <img src="/assets/logo.png" alt="CareerPilot" width="28" height="28" />
-        <span>CareerPilot</span>
+        <img class="brand-mark" src="/assets/logo.png" alt="CareerPilot" width="34" height="34" />
+        <span class="brand-name">CareerPilot</span>
       </div>
 
       <nav class="nav-list">
         <button class="nav-item" type="button" data-service="titles">
-          <span class="nav-icon" data-icon="titles"></span>
-          <span class="nav-label">مسميات وظيفية</span>
+          <span class="nav-left">
+            <span class="nav-icon" data-icon="titles"></span>
+            <span class="nav-label">مسميات وظيفية</span>
+          </span>
+          <span class="active-dot"></span>
         </button>
         <button class="nav-item" type="button" data-service="search">
-          <span class="nav-icon" data-icon="search"></span>
-          <span class="nav-label">البحث عن وظائف</span>
+          <span class="nav-left">
+            <span class="nav-icon" data-icon="search"></span>
+            <span class="nav-label">البحث عن وظائف</span>
+          </span>
+          <span class="active-dot"></span>
         </button>
         <button class="nav-item" type="button" data-service="match">
-          <span class="nav-icon" data-icon="match"></span>
-          <span class="nav-label">تقييم التوافق</span>
+          <span class="nav-left">
+            <span class="nav-icon" data-icon="match"></span>
+            <span class="nav-label">تقييم التوافق</span>
+          </span>
+          <span class="active-dot"></span>
         </button>
         <button class="nav-item" type="button" data-service="improve">
-          <span class="nav-icon" data-icon="improve"></span>
-          <span class="nav-label">تحسين السيرة (ATS)</span>
-          <span class="flagship-dot" title="الخدمة الأهم"></span>
+          <span class="nav-left">
+            <span class="nav-icon" data-icon="improve"></span>
+            <span class="nav-label">تحسين السيرة (ATS)</span>
+            <span class="flagship-dot" title="الخدمة الأهم"></span>
+          </span>
+          <span class="active-dot"></span>
         </button>
         <button class="nav-item" type="button" data-service="letter">
-          <span class="nav-icon" data-icon="letter"></span>
-          <span class="nav-label">خطاب تقديم</span>
+          <span class="nav-left">
+            <span class="nav-icon" data-icon="letter"></span>
+            <span class="nav-label">خطاب تقديم</span>
+          </span>
+          <span class="active-dot"></span>
         </button>
       </nav>
 
       <div class="sidebar-bottom">
         <div class="limit-banner hidden" id="limitCard"></div>
-        <div class="request-meter">
-          <div class="meter-track"><div class="meter-fill" id="meterFill"></div></div>
-          <span class="meter-text" id="counterPill">الطلبات 0/6</span>
+        <div class="progress-card">
+          <div class="progress-top">
+            <span class="label">رحلة الطلبات</span>
+            <span class="count" id="counterPill">0/6</span>
+          </div>
+          <div class="progress-sub">أكمل 6 طلبات لفتح تقرير أداء سيرتك الذاتية</div>
+          <div class="progress-track"><div class="progress-fill" id="meterFill"></div></div>
         </div>
         <div class="file-chip hidden" id="fileChip">
           <span class="file-chip-icon" id="fileChipIcon"></span>
@@ -60,25 +81,44 @@
     <main class="workspace">
       <!-- الحالة أ: قبل رفع السيرة -->
       <section class="upload-state" id="uploadState">
-        <div class="upload-blobs" aria-hidden="true">
-          <span class="ublob u1"></span>
-          <span class="ublob u2"></span>
-          <span class="ublob u3"></span>
-        </div>
         <img
           class="upload-illustration"
-          src="/assets/hero-illustration.svg"
-          alt="رسم توضيحي لشخص يراجع سيرته الذاتية"
+          src="/assets/hero-illustration.png"
+          alt="رسم توضيحي لسيرة ذاتية بنتيجة توافق عالية مع شارات تقييم حولها"
           onerror="this.style.display='none'"
         />
-        <h1 class="upload-title">ابدأ رحلتك المهنية</h1>
-        <p class="upload-subtitle">ارفع سيرتك الذاتية لتفعيل كل الخدمات</p>
 
-        <label class="dropzone" id="dropzone" for="fileInput">
-          <p>اسحب ملف PDF هنا أو اضغط لاختياره</p>
+        <p class="eyebrow"><span class="step-num">١</span> من ٦ — رفع السيرة الذاتية</p>
+
+        <h1 class="upload-title">ابدأ <span class="mark">رحلتك المهنية</span></h1>
+        <p class="upload-subtitle">ارفع سيرتك الذاتية لتفعيل كل الخدمات — من تقييم التوافق إلى خطاب التقديم، في مكان واحد.</p>
+
+        <label class="dropzone" id="dropzone" for="fileInput" tabindex="0">
+          <input type="file" id="fileInput" accept="application/pdf" />
+
+          <div class="icon-cluster" aria-hidden="true">
+            <div class="doc-chip a">
+              <div class="ln"></div><div class="ln"></div><div class="ln"></div>
+              <div class="badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+            </div>
+            <div class="doc-chip b">
+              <div class="ln"></div><div class="ln"></div><div class="ln"></div>
+            </div>
+            <div class="upload-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            </div>
+          </div>
+
+          <p>اسحب ملف <span class="accent-text">PDF</span> هنا أو اضغط لاختياره</p>
           <span>الحد الأقصى 200 ميغابايت</span>
+
+          <div class="chip-row">
+            <span class="filetype-chip">PDF</span>
+            <span class="filetype-chip">حتى 200MB</span>
+          </div>
         </label>
-        <input type="file" id="fileInput" accept="application/pdf" />
         <p class="upload-error hidden" id="uploadError"></p>
       </section>
 
@@ -86,14 +126,14 @@
       <section class="service-workspace hidden" id="serviceWorkspace">
 
         <div class="service-pane" data-service="titles" id="paneTitles">
-          <p class="eyebrow">حلّل سيرتك أولاً</p>
+          <p class="eyebrow"><span class="step-num">الخدمة النشطة</span> — حلّل سيرتك أولاً</p>
           <h1 class="workspace-title">اقتراح مسميات وظيفية</h1>
           <p class="workspace-desc">تحليل سيرتك واقتراح مسميات تناسب خبراتك.</p>
           <button class="action-btn btn-purple" id="btnTitles" type="button">اقترح لي مسميات</button>
         </div>
 
         <div class="service-pane hidden" data-service="search" id="paneSearch">
-          <p class="eyebrow">وظائف حقيقية</p>
+          <p class="eyebrow"><span class="step-num">الخدمة النشطة</span> — وظائف حقيقية</p>
           <h1 class="workspace-title">البحث عن وظائف</h1>
           <p class="workspace-desc">ابحث عن وظائف حقيقية حسب المسمى والمدينة.</p>
           <div class="inputs-row">
@@ -104,7 +144,7 @@
         </div>
 
         <div class="service-pane hidden" data-service="match" id="paneMatch">
-          <p class="eyebrow">قرار مبني على تحليل حقيقي</p>
+          <p class="eyebrow"><span class="step-num">الخدمة النشطة</span> — قرار مبني على تحليل حقيقي</p>
           <h1 class="workspace-title">تقييم التوافق</h1>
           <p class="workspace-desc">قيّم مدى توافق سيرتك مع وظيفة من نتائج بحثك.</p>
           <div class="inputs-row">
@@ -115,7 +155,7 @@
         </div>
 
         <div class="service-pane hidden" data-service="improve" id="paneImprove">
-          <p class="eyebrow eyebrow-accent">الخدمة الأهم</p>
+          <p class="eyebrow eyebrow-accent"><span class="step-num">الخدمة الأهم</span> — تحسين متوافق مع ATS</p>
           <h1 class="workspace-title">تحسين السيرة الذاتية (ATS)</h1>
           <p class="workspace-desc">حسّن سيرتك لتتوافق مع وظيفة محددة بصياغة متوافقة مع ATS.</p>
           <div class="inputs-row">
@@ -126,7 +166,7 @@
         </div>
 
         <div class="service-pane hidden" data-service="letter" id="paneLetter">
-          <p class="eyebrow">جاهز للإرسال</p>
+          <p class="eyebrow"><span class="step-num">الخدمة النشطة</span> — جاهز للإرسال</p>
           <h1 class="workspace-title">خطاب تقديم</h1>
           <p class="workspace-desc">خطاب تقديم مخصص مبني على سيرتك الحقيقية.</p>
           <div class="inputs-row">
