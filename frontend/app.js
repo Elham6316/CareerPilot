@@ -125,7 +125,7 @@ async function handleUpload(file) {
     document.getElementById("confirmFilename").textContent = data.filename;
     setServicesEnabled(true);
   } catch (err) {
-    uploadError.textContent = "تعذّر الاتصال بالخادم — تأكدي من تشغيل السيرفر.";
+    uploadError.textContent = "تعذّر الاتصال بالخادم — تأكد من تشغيل السيرفر.";
     uploadError.classList.remove("hidden");
   }
 }
@@ -184,14 +184,19 @@ async function sendMessage(message) {
     });
     data = await resp.json();
   } catch (err) {
-    renderError("تعذّر الاتصال بالخادم. تأكدي من تشغيل السيرفر وحاولي مرة أخرى.");
+    renderError("تعذّر الاتصال بالخادم. تأكد من تشغيل السيرفر وحاول مرة أخرى.");
     return;
   }
 
   if (resp.status === 429) {
+    // نبني الرسالة هنا بدل عرض data.error من الـ backend مباشرة — نص
+    // الخادم فيه صيغة تأنيث ("وصلتِ") لا يمكن تعديلها من هذا الملف
+    // (api.py خارج نطاق هذي المهمة)، فنستخدم نفس نص الواجهة المذكّر
+    // المستخدم أعلاه لضمان اتساق الصيغة بغض النظر عن مصدر الرسالة.
     requestCount = requestLimit;
-    showLimitReached(data.error);
-    renderError(data.error);
+    const limitMessage = `وصلت للحد الأقصى من الطلبات لهذي الجلسة (${requestLimit} طلبات).`;
+    showLimitReached(limitMessage);
+    renderError(limitMessage);
     return;
   }
 
@@ -215,7 +220,7 @@ async function sendMessage(message) {
   setServicesEnabled(resumeReady);
 
   if (requestCount >= requestLimit) {
-    showLimitReached(`وصلتِ للحد الأقصى من الطلبات لهذي الجلسة (${requestLimit} طلبات).`);
+    showLimitReached(`وصلت للحد الأقصى من الطلبات لهذي الجلسة (${requestLimit} طلبات).`);
   }
 }
 
@@ -430,7 +435,7 @@ document.getElementById("btnSearch").addEventListener("click", () => {
   const title = document.getElementById("searchTitleInput").value.trim();
   const city = document.getElementById("searchCityInput").value.trim();
   if (!title || !city) {
-    renderError("أدخلي المسمى الوظيفي والمدينة أولاً.");
+    renderError("أدخل المسمى الوظيفي والمدينة أولاً.");
     return;
   }
   sendMessage(`ابحث لي عن وظائف ${title} في ${city}`);
