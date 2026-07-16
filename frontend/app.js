@@ -1,15 +1,27 @@
 /* app.js — طبقة عرض فقط فوق api.py. لا يوجد هنا أي منطق قرار "أي أداة
    تُستدعى" — كل زر يرسل نص طلب بالعربية لـ /api/message، والوكيل (Gemini)
    عبر agent.py يقرر بنفسه. الملف هنا فقط: (1) جلسة، (2) استدعاءات fetch،
-   (3) تنسيق بصري للنتائج حسب نوع الأداة المُرجَعة من tool_results. */
+   (3) تنسيق بصري للنتائج حسب نوع الأداة المُرجَعة من tool_results،
+   (4) تبديل الخدمة النشطة في هيكل التطبيق (شريط جانبي + مساحة عمل). */
 
 const SESSION_ID = crypto.randomUUID();
 const REVIEW_TOOLS = new Set(["improve_resume", "draft_cover_letter"]);
+const SERVICE_ICONS = { titles: "sparkle", search: "search", match: "check", improve: "star", letter: "document", applications: "list" };
+const EMPTY_MESSAGES = {
+  titles: "اضغط الزر لاقتراح مسميات وظيفية تناسب سيرتك.",
+  search: "ابحث عن وظائف لعرض النتائج هنا.",
+  match: "اختر وظيفة من نتائج بحثك لتقييم التوافق.",
+  improve: "اختر وظيفة لتحسين سيرتك بما يتوافق معها.",
+  letter: "اختر وظيفة لكتابة خطاب تقديم مخصص.",
+  applications: "اعرض ملخص تقديماتك هنا.",
+};
 
 let resumeReady = false;
 let requestCount = 0;
 let requestLimit = 6;
 let latestJobs = [];
+let activeService = null;
+let serviceResultCache = {}; // { [service]: lastApiResponseData }
 
 // ------------------------------------------------------------------
 // أيقونات SVG بسيطة inline بستايل خط واحد موحّد — بلا إيموجي إطلاقاً
@@ -49,50 +61,66 @@ function formatReplyText(str) {
   return escapeHtml(str).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
+// نتيجة جديدة تدخل مساحة النتائج بحركة صعود خفيفة 8px بدل ظهور مفاجئ
+function animateIn() {
+  const el = document.getElementById("resultsContent");
+  el.classList.remove("results-fade-in");
+  void el.offsetWidth;
+  el.classList.add("results-fade-in");
+}
+
 // ------------------------------------------------------------------
-// تهيئة شارات الأيقونات (badge دائري ملوّن لكل بطاقة، الأيقونة وحدها
-// بلا نص مدمج معها — العنوان أصبح عنصر h3 منفصل في HTML)
+// تهيئة أيقونات التنقل (الشريط الجانبي + شريط التبويبات السفلي معاً،
+// كلاهما يحمل نفس [data-icon])
 // ------------------------------------------------------------------
+Object.entries(SERVICE_ICONS).forEach(([key, name]) => {
+  document.querySelectorAll(`[data-icon="${key}"]`).forEach((el) => {
+    el.innerHTML = icon(name, "#D3A0FD", 18);
+  });
+});
+document.getElementById("fileChipIcon").innerHTML = icon("check", "#3F7A34", 14);
+
 // ------------------------------------------------------------------
-// هيدر ثابت يكتسب ضبابية خلفية عند التمرير + ظهور تدريجي للأقسام
+// التنقل بين الخدمات (هيكل تطبيق: خدمة نشطة واحدة فقط بالمساحة الرئيسية)
 // ------------------------------------------------------------------
-window.addEventListener("scroll", () => {
-  document.getElementById("siteHeader").classList.toggle("scrolled", window.scrollY > 20);
+function selectService(key) {
+  activeService = key;
+  document.querySelectorAll(".nav-item, .tab-item").forEach((el) => {
+    el.classList.toggle("active", el.dataset.service === key);
+  });
+  document.querySelectorAll(".service-pane").forEach((el) => {
+    el.classList.toggle("hidden", el.dataset.service !== key);
+  });
+
+  document.getElementById("resultsContent").innerHTML = "";
+  if (serviceResultCache[key]) {
+    document.getElementById("resultsEmpty").classList.add("hidden");
+    renderResult(serviceResultCache[key]);
+  } else {
+    showEmptyForService(key);
+  }
+}
+
+function showEmptyForService(key) {
+  document.getElementById("resultsContent").innerHTML = "";
+  document.getElementById("resultsEmptyIcon").innerHTML = icon(SERVICE_ICONS[key], "#D3A0FD", 20);
+  document.getElementById("resultsEmptyText").textContent = EMPTY_MESSAGES[key] || "";
+  document.getElementById("resultsEmpty").classList.remove("hidden");
+}
+
+document.querySelectorAll(".nav-item, .tab-item").forEach((el) => {
+  el.addEventListener("click", () => selectService(el.dataset.service));
 });
 
-const revealObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        revealObserver.unobserve(entry.target);
-      }
-    });
-  },
-  { threshold: 0.15 }
-);
-document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
-
-document.getElementById("iconTitles").innerHTML = icon("sparkle", "#D3A0FD", 24);
-document.getElementById("iconSearch").innerHTML = icon("search", "#D3A0FD", 24);
-document.getElementById("iconMatch").innerHTML = icon("check", "#D3A0FD", 24);
-document.getElementById("iconImprove").innerHTML = icon("star", "#D3A0FD", 24);
-document.getElementById("iconLetter").innerHTML = icon("document", "#D3A0FD", 24);
-document.getElementById("iconApplications").innerHTML = icon("list", "#D3A0FD", 24);
-document.getElementById("uploadIconSlot").innerHTML = icon("arrow-up", "#D3A0FD", 24);
-document.getElementById("confirmIconSlot").innerHTML = icon("check", "#3F7A34", 24);
-
 // ------------------------------------------------------------------
-// رفع السيرة
+// رفع السيرة (يُستخدم أيضاً لمسار "استبدال" لاحقاً — نفس الدالة)
 // ------------------------------------------------------------------
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
-const uploadCard = document.getElementById("uploadCard");
-const confirmCard = document.getElementById("confirmCard");
 const uploadError = document.getElementById("uploadError");
 
-document.getElementById("heroCta").addEventListener("click", () => {
-  document.getElementById("uploadSection").scrollIntoView({ behavior: "smooth", block: "center" });
+document.getElementById("replaceBtn").addEventListener("click", () => {
+  fileInput.click();
 });
 
 ["dragover", "dragenter"].forEach((evt) =>
@@ -140,10 +168,16 @@ async function handleUpload(file) {
     }
 
     resumeReady = true;
-    uploadCard.classList.add("hidden");
-    confirmCard.classList.remove("hidden");
+    document.getElementById("uploadState").classList.add("hidden");
+    document.getElementById("serviceWorkspace").classList.remove("hidden");
+    document.getElementById("fileChip").classList.remove("hidden");
     document.getElementById("confirmFilename").textContent = data.filename;
-    setServicesEnabled(true);
+
+    // سيرة جديدة تُبطل أي نتائج/وظائف من السيرة السابقة (مسار "استبدال")
+    serviceResultCache = {};
+    latestJobs = [];
+    updateJobSelects();
+    selectService(activeService || "titles");
   } catch (err) {
     uploadError.textContent = "تعذّر الاتصال بالخادم — تأكد من تشغيل السيرفر.";
     uploadError.classList.remove("hidden");
@@ -151,7 +185,7 @@ async function handleUpload(file) {
 }
 
 // ------------------------------------------------------------------
-// تفعيل/تعطيل بطاقات الخدمات
+// تفعيل/تعطيل عناصر الخدمات
 // ------------------------------------------------------------------
 function setServicesEnabled(enabled) {
   const limitReached = requestCount >= requestLimit;
@@ -173,10 +207,10 @@ function setServicesEnabled(enabled) {
     badge.classList.toggle("hidden", resumeReady ? hasJobs : true);
   });
 
-  // تعتيم اللوحة كاملة (نص + رسم) قبل رفع السيرة، لا الأزرار فقط
-  ["Titles", "Search", "Match", "Improve", "Letter", "Applications"].forEach((name) => {
-    document.getElementById(`panel${name}`).classList.toggle("panel-disabled", !enabled || limitReached);
-  });
+  // الشريط الجانبي/شريط التبويبات: معطّل قبل رفع السيرة أو بعد بلوغ الحد
+  const sidebarDisabled = !resumeReady || limitReached;
+  document.getElementById("sidebar").classList.toggle("disabled", sidebarDisabled);
+  document.getElementById("bottomTabs").classList.toggle("disabled", sidebarDisabled);
 }
 
 function capitalize(s) {
@@ -194,12 +228,18 @@ function updateJobSelects() {
   setServicesEnabled(resumeReady);
 }
 
+function updateMeter() {
+  document.getElementById("counterPill").textContent = `الطلبات ${requestCount}/${requestLimit}`;
+  const pct = Math.min(100, (requestCount / requestLimit) * 100);
+  document.getElementById("meterFill").style.width = `${pct}%`;
+}
+
 // ------------------------------------------------------------------
 // إرسال رسالة للوكيل — المسار الوحيد لكل الأزرار
 // ------------------------------------------------------------------
 async function sendMessage(message) {
+  const requestedService = activeService;
   showSkeleton();
-  document.getElementById("resultsSection").scrollIntoView({ behavior: "smooth", block: "start" });
 
   let resp, data;
   try {
@@ -220,6 +260,7 @@ async function sendMessage(message) {
     // (api.py خارج نطاق هذي المهمة)، فنستخدم نفس نص الواجهة المذكّر
     // المستخدم أعلاه لضمان اتساق الصيغة بغض النظر عن مصدر الرسالة.
     requestCount = requestLimit;
+    updateMeter();
     const limitMessage = `وصلت للحد الأقصى من الطلبات لهذي الجلسة (${requestLimit} طلبات).`;
     showLimitReached(limitMessage);
     renderError(limitMessage);
@@ -233,7 +274,7 @@ async function sendMessage(message) {
 
   requestCount = data.request_count;
   requestLimit = data.request_limit;
-  document.getElementById("counterPill").textContent = `الطلبات: ${requestCount} / ${requestLimit}`;
+  updateMeter();
 
   // حدّث قائمة الوظائف لو تضمّن الرد نتيجة بحث جديدة
   const searchResult = data.tool_results.find((t) => t.name === "search_jobs" && t.result && t.result.jobs);
@@ -242,7 +283,10 @@ async function sendMessage(message) {
     updateJobSelects();
   }
 
-  renderResult(data);
+  serviceResultCache[requestedService] = data;
+  if (requestedService === activeService) {
+    renderResult(data);
+  }
   setServicesEnabled(resumeReady);
 
   if (requestCount >= requestLimit) {
@@ -271,7 +315,9 @@ function showSkeleton() {
 }
 
 function renderError(message) {
+  document.getElementById("resultsEmpty").classList.add("hidden");
   document.getElementById("resultsContent").innerHTML = `<div class="error-card">${escapeHtml(message)}</div>`;
+  animateIn();
 }
 
 // ------------------------------------------------------------------
@@ -280,9 +326,11 @@ function renderError(message) {
 function renderResult(data) {
   const container = document.getElementById("resultsContent");
   const results = data.tool_results || [];
+  document.getElementById("resultsEmpty").classList.add("hidden");
 
   if (results.length === 0) {
     container.innerHTML = `<div class="plain-reply">${formatReplyText(data.reply)}</div>`;
+    animateIn();
     return;
   }
 
@@ -318,6 +366,7 @@ function renderResult(data) {
       break;
     default:
       container.innerHTML = `<div class="plain-reply">${formatReplyText(data.reply)}</div>`;
+      animateIn();
   }
 }
 
@@ -326,17 +375,17 @@ function renderTitles(result, replyText) {
   const container = document.getElementById("resultsContent");
   if (titles.length === 0) {
     container.innerHTML = `<div class="plain-reply">${formatReplyText(replyText)}</div>`;
+    animateIn();
     return;
   }
   const pills = titles
     .map((t) => `<button class="title-pill" data-title="${escapeHtml(t)}">${escapeHtml(t)}</button>`)
     .join("");
-  container.innerHTML = `
-    <p class="plain-reply">${formatReplyText(replyText)}</p>
-    <div class="titles-pills">${pills}</div>`;
+  container.innerHTML = `<div class="titles-pills">${pills}</div>`;
   container.querySelectorAll(".title-pill").forEach((btn) => {
     btn.addEventListener("click", () => sendMessage(`اختار ${btn.dataset.title}`));
   });
+  animateIn();
 }
 
 function renderJobs(result, replyText) {
@@ -344,6 +393,7 @@ function renderJobs(result, replyText) {
   const container = document.getElementById("resultsContent");
   if (jobs.length === 0) {
     container.innerHTML = `<div class="plain-reply">${formatReplyText(replyText)}</div>`;
+    animateIn();
     return;
   }
   const cards = jobs
@@ -363,6 +413,7 @@ function renderJobs(result, replyText) {
   container.innerHTML = `
     <div class="jobs-list">${cards}</div>
     <p class="legitimacy-notice">تحقق من شرعية الشركة قبل التقديم — النتائج مستمدة من محرك تجميع (Jooble).</p>`;
+  animateIn();
 }
 
 function renderMatch(result, replyText) {
@@ -374,6 +425,7 @@ function renderMatch(result, replyText) {
       <div class="match-score-badge ${tier}">${score}%</div>
       <div class="match-reasoning">${formatReplyText(result.reasoning || replyText)}</div>
     </div>`;
+  animateIn();
 }
 
 function renderReview(fullText, changes, warning, filename, replyText) {
@@ -414,6 +466,7 @@ function renderReview(fullText, changes, warning, filename, replyText) {
     a.click();
     URL.revokeObjectURL(url);
   });
+  animateIn();
 }
 
 function renderLogConfirm(result, replyText) {
@@ -425,6 +478,7 @@ function renderLogConfirm(result, replyText) {
       <span>تم تسجيل التقديم على ${escapeHtml(app.title || "")} في ${escapeHtml(app.company || "")}.</span>
     </div>
     <p class="plain-reply" style="margin-top:1rem">${formatReplyText(replyText)}</p>`;
+  animateIn();
 }
 
 function renderApplications(result, replyText) {
@@ -432,6 +486,7 @@ function renderApplications(result, replyText) {
   const container = document.getElementById("resultsContent");
   if (apps.length === 0) {
     container.innerHTML = `<div class="plain-reply">${formatReplyText(replyText)}</div>`;
+    animateIn();
     return;
   }
   const statusLabels = { submitted: "تم التقديم", interview: "مقابلة", offer: "عرض عمل", rejected: "مرفوض" };
@@ -448,10 +503,11 @@ function renderApplications(result, replyText) {
     )
     .join("");
   container.innerHTML = `<div class="applications-list">${cards}</div>`;
+  animateIn();
 }
 
 // ------------------------------------------------------------------
-// ربط أزرار البطاقات — كل واحد يبني نص طلب فقط، لا استدعاء أداة مباشر
+// ربط أزرار الخدمات — كل واحد يبني نص طلب فقط، لا استدعاء أداة مباشر
 // ------------------------------------------------------------------
 document.getElementById("btnTitles").addEventListener("click", () => {
   sendMessage("حلل سيرتي واقترح مسميات وظيفية تناسبني");
@@ -489,4 +545,5 @@ document.getElementById("btnApplications").addEventListener("click", () => {
   sendMessage("اعرض ملخص تقديماتي");
 });
 
+updateMeter();
 setServicesEnabled(false);

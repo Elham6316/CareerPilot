@@ -10,200 +10,163 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="site-header" id="siteHeader">
-    <div class="container header-inner">
-      <div class="brand">
-        <img src="/assets/logo.png" alt="CareerPilot" width="30" height="30" />
+  <div class="app-shell">
+    <!-- ================= الشريط الجانبي (يمين) ================= -->
+    <aside class="sidebar disabled" id="sidebar">
+      <div class="sidebar-brand">
+        <img src="/assets/logo.png" alt="CareerPilot" width="28" height="28" />
         <span>CareerPilot</span>
       </div>
-      <div class="counter-pill" id="counterPill">الطلبات: 0 / 6</div>
-    </div>
-  </header>
 
-  <!-- ================= Hero: كامل الشاشة، شعار واحد بالهيدر فقط ================= -->
-  <section class="hero" id="hero">
-    <div class="hero-blobs" aria-hidden="true">
-      <span class="blob b1"></span>
-      <span class="blob b2"></span>
-      <span class="blob b3"></span>
-      <span class="blob b4"></span>
-    </div>
-    <div class="container hero-inner">
-      <div class="hero-copy">
-        <h1 class="hero-title">ابدأ رحلتك المهنية</h1>
-        <p class="hero-subtitle">مرشدك الذكي يبحث ويقيّم ويكتب نيابة عنك — بموافقتك دائماً</p>
-        <button class="cta-pill" id="heroCta">ارفع سيرتك للبدء</button>
+      <nav class="nav-list">
+        <button class="nav-item" type="button" data-service="titles">
+          <span class="nav-icon" data-icon="titles"></span>
+          <span class="nav-label">مسميات وظيفية</span>
+        </button>
+        <button class="nav-item" type="button" data-service="search">
+          <span class="nav-icon" data-icon="search"></span>
+          <span class="nav-label">البحث عن وظائف</span>
+        </button>
+        <button class="nav-item" type="button" data-service="match">
+          <span class="nav-icon" data-icon="match"></span>
+          <span class="nav-label">تقييم التوافق</span>
+        </button>
+        <button class="nav-item" type="button" data-service="improve">
+          <span class="nav-icon" data-icon="improve"></span>
+          <span class="nav-label">تحسين السيرة (ATS)</span>
+          <span class="flagship-dot" title="الخدمة الأهم"></span>
+        </button>
+        <button class="nav-item" type="button" data-service="letter">
+          <span class="nav-icon" data-icon="letter"></span>
+          <span class="nav-label">خطاب تقديم</span>
+        </button>
+        <button class="nav-item" type="button" data-service="applications">
+          <span class="nav-icon" data-icon="applications"></span>
+          <span class="nav-label">تقديماتي</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="limit-banner hidden" id="limitCard"></div>
+        <div class="request-meter">
+          <div class="meter-track"><div class="meter-fill" id="meterFill"></div></div>
+          <span class="meter-text" id="counterPill">الطلبات 0/6</span>
+        </div>
+        <div class="file-chip hidden" id="fileChip">
+          <span class="file-chip-icon" id="fileChipIcon"></span>
+          <span class="file-chip-name" id="confirmFilename"></span>
+          <button class="file-chip-replace" id="replaceBtn" type="button">استبدال</button>
+        </div>
       </div>
-      <img
-        class="hero-illustration"
-        src="/assets/hero-illustration.svg"
-        alt="رسم توضيحي لشخص يبحث عن وظيفة ويراجع سيرته الذاتية"
-        onerror="this.style.display='none'"
-      />
-    </div>
-  </section>
+    </aside>
 
-  <!-- ================= رفع السيرة: شريط كامل العرض ================= -->
-  <section class="band upload-band reveal" id="uploadSection">
-    <div class="container band-inner">
-      <div id="uploadCard">
-        <p class="eyebrow">الخطوة الأولى</p>
-        <h2 class="section-heading">ارفع سيرتك الذاتية</h2>
-        <p class="section-desc">هذي الخطوة الأولى الإلزامية — بعدها تتفعّل كل الخدمات أدناه.</p>
+    <!-- ================= مساحة العمل الرئيسية ================= -->
+    <main class="workspace">
+      <!-- الحالة أ: قبل رفع السيرة -->
+      <section class="upload-state" id="uploadState">
+        <div class="upload-blobs" aria-hidden="true">
+          <span class="ublob u1"></span>
+          <span class="ublob u2"></span>
+          <span class="ublob u3"></span>
+        </div>
+        <img
+          class="upload-illustration"
+          src="/assets/hero-illustration.svg"
+          alt="رسم توضيحي لشخص يراجع سيرته الذاتية"
+          onerror="this.style.display='none'"
+        />
+        <h1 class="upload-title">ابدأ رحلتك المهنية</h1>
+        <p class="upload-subtitle">ارفع سيرتك الذاتية لتفعيل كل الخدمات</p>
 
         <label class="dropzone" id="dropzone" for="fileInput">
-          <div class="dropzone-icon" id="uploadIconSlot"></div>
           <p>اسحب ملف PDF هنا أو اضغط لاختياره</p>
           <span>الحد الأقصى 200 ميغابايت</span>
         </label>
         <input type="file" id="fileInput" accept="application/pdf" />
         <p class="upload-error hidden" id="uploadError"></p>
-      </div>
+      </section>
 
-      <div class="confirm-state hidden" id="confirmCard">
-        <span class="confirm-icon" id="confirmIconSlot"></span>
-        <div>
-          <strong>تم رفع السيرة الذاتية</strong>
-          <span id="confirmFilename"></span>
+      <!-- الحالة ب: خدمة نشطة بعد الرفع -->
+      <section class="service-workspace hidden" id="serviceWorkspace">
+
+        <div class="service-pane" data-service="titles" id="paneTitles">
+          <p class="eyebrow">حلّل سيرتك أولاً</p>
+          <h1 class="workspace-title">اقتراح مسميات وظيفية</h1>
+          <p class="workspace-desc">تحليل سيرتك واقتراح مسميات تناسب خبراتك.</p>
+          <button class="action-btn btn-purple" id="btnTitles" type="button">اقترح لي مسميات</button>
         </div>
-      </div>
-    </div>
-  </section>
 
-  <div class="container">
-    <div class="limit-banner hidden" id="limitCard"></div>
+        <div class="service-pane hidden" data-service="search" id="paneSearch">
+          <p class="eyebrow">وظائف حقيقية</p>
+          <h1 class="workspace-title">البحث عن وظائف</h1>
+          <p class="workspace-desc">ابحث عن وظائف حقيقية حسب المسمى والمدينة.</p>
+          <div class="inputs-row">
+            <input class="field-input" id="searchTitleInput" placeholder="المسمى الوظيفي" />
+            <input class="field-input" id="searchCityInput" placeholder="المدينة" />
+          </div>
+          <button class="action-btn btn-purple" id="btnSearch" type="button">ابحث الآن</button>
+        </div>
+
+        <div class="service-pane hidden" data-service="match" id="paneMatch">
+          <p class="eyebrow">قرار مبني على تحليل حقيقي</p>
+          <h1 class="workspace-title">تقييم التوافق</h1>
+          <p class="workspace-desc">قيّم مدى توافق سيرتك مع وظيفة من نتائج بحثك.</p>
+          <div class="inputs-row">
+            <span class="panel-badge hidden" id="matchBadge">ابحث عن وظائف أولاً</span>
+            <select class="select-input" id="matchSelect"><option>لا توجد نتائج بحث بعد</option></select>
+          </div>
+          <button class="action-btn btn-purple" id="btnMatch" type="button">قيّم التوافق</button>
+        </div>
+
+        <div class="service-pane hidden" data-service="improve" id="paneImprove">
+          <p class="eyebrow eyebrow-accent">الخدمة الأهم</p>
+          <h1 class="workspace-title">تحسين السيرة الذاتية (ATS)</h1>
+          <p class="workspace-desc">حسّن سيرتك لتتوافق مع وظيفة محددة بصياغة متوافقة مع ATS.</p>
+          <div class="inputs-row">
+            <span class="panel-badge hidden" id="improveBadge">ابحث عن وظائف أولاً</span>
+            <select class="select-input" id="improveSelect"><option>لا توجد نتائج بحث بعد</option></select>
+          </div>
+          <button class="action-btn btn-lime" id="btnImprove" type="button">حسّن سيرتي</button>
+        </div>
+
+        <div class="service-pane hidden" data-service="letter" id="paneLetter">
+          <p class="eyebrow">جاهز للإرسال</p>
+          <h1 class="workspace-title">خطاب تقديم</h1>
+          <p class="workspace-desc">خطاب تقديم مخصص مبني على سيرتك الحقيقية.</p>
+          <div class="inputs-row">
+            <span class="panel-badge hidden" id="letterBadge">ابحث عن وظائف أولاً</span>
+            <select class="select-input" id="letterSelect"><option>لا توجد نتائج بحث بعد</option></select>
+          </div>
+          <button class="action-btn btn-purple" id="btnLetter" type="button">اكتب الخطاب</button>
+        </div>
+
+        <div class="service-pane hidden" data-service="applications" id="paneApplications">
+          <p class="eyebrow">تتبّع رحلتك</p>
+          <h1 class="workspace-title">تقديماتي</h1>
+          <p class="workspace-desc">ملخص الوظائف اللي سجّلت تقديمك عليها.</p>
+          <button class="action-btn btn-purple" id="btnApplications" type="button">اعرض تقديماتي</button>
+        </div>
+
+        <div class="results-area" id="resultsArea">
+          <div class="results-empty" id="resultsEmpty">
+            <span class="results-empty-icon" id="resultsEmptyIcon"></span>
+            <p id="resultsEmptyText"></p>
+          </div>
+          <div id="resultsContent"></div>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <!-- ================= الخدمات: لوحات كاملة العرض متبادلة، لا شبكة بطاقات ================= -->
-  <section class="service-panel reveal tint-0" data-card="titles" id="panelTitles">
-    <div class="container panel-inner align-right">
-      <div class="panel-text">
-        <p class="eyebrow">حلّلي سيرتك أولاً</p>
-        <h2 class="section-heading">اقتراح مسميات وظيفية</h2>
-        <p class="section-desc">تحليل سيرتك واقتراح مسميات تناسب خبراتك.</p>
-        <button class="cta-link" id="btnTitles" disabled>اقترح لي مسميات <span class="arrow">←</span></button>
-      </div>
-      <div class="panel-motif">
-        <div class="motif-blob motif-1"><div class="motif-icon" id="iconTitles"></div></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="service-panel reveal tint-1" data-card="search" id="panelSearch">
-    <div class="container panel-inner align-left">
-      <div class="panel-motif">
-        <div class="motif-blob motif-2"><div class="motif-icon" id="iconSearch"></div></div>
-      </div>
-      <div class="panel-text">
-        <p class="eyebrow">وظائف حقيقية</p>
-        <h2 class="section-heading">البحث عن وظائف</h2>
-        <p class="section-desc">ابحث عن وظائف حقيقية حسب المسمى والمدينة.</p>
-        <div class="panel-fields">
-          <input class="field-input" id="searchTitleInput" placeholder="المسمى الوظيفي" disabled />
-          <input class="field-input" id="searchCityInput" placeholder="المدينة" disabled />
-        </div>
-        <button class="cta-link" id="btnSearch" disabled>ابحث الآن <span class="arrow">←</span></button>
-      </div>
-    </div>
-  </section>
-
-  <section class="service-panel reveal tint-2" data-card="match" id="panelMatch">
-    <div class="container panel-inner align-right">
-      <div class="panel-text">
-        <p class="eyebrow">قرار مبني على تحليل حقيقي</p>
-        <h2 class="section-heading">تقييم التوافق</h2>
-        <p class="section-desc">قيّم مدى توافق سيرتك مع وظيفة من نتائج بحثك.</p>
-        <div class="panel-fields">
-          <span class="panel-badge hidden" id="matchBadge">ابحث عن وظائف أولاً</span>
-          <select class="select-input" id="matchSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
-        </div>
-        <button class="cta-link" id="btnMatch" disabled>قيّم التوافق <span class="arrow">←</span></button>
-      </div>
-      <div class="panel-motif">
-        <div class="motif-blob motif-3"><div class="motif-icon" id="iconMatch"></div></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="service-panel reveal tint-0 emphasized" data-card="improve" id="panelImprove">
-    <div class="container panel-inner align-left">
-      <div class="panel-motif">
-        <div class="motif-blob motif-4"><div class="motif-icon" id="iconImprove"></div></div>
-      </div>
-      <div class="panel-text">
-        <p class="eyebrow eyebrow-accent">الخدمة الأهم</p>
-        <h2 class="section-heading">تحسين السيرة الذاتية (ATS)</h2>
-        <p class="section-desc">حسّن سيرتك لتتوافق مع وظيفة محددة بصياغة متوافقة مع ATS.</p>
-        <div class="panel-fields">
-          <span class="panel-badge hidden" id="improveBadge">ابحث عن وظائف أولاً</span>
-          <select class="select-input" id="improveSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
-        </div>
-        <button class="cta-link cta-link-accent" id="btnImprove" disabled>حسّن سيرتي <span class="arrow">←</span></button>
-      </div>
-    </div>
-  </section>
-
-  <section class="service-panel reveal tint-1" data-card="letter" id="panelLetter">
-    <div class="container panel-inner align-right">
-      <div class="panel-text">
-        <p class="eyebrow">جاهز للإرسال</p>
-        <h2 class="section-heading">خطاب تقديم</h2>
-        <p class="section-desc">خطاب تقديم مخصص مبني على سيرتك الحقيقية.</p>
-        <div class="panel-fields">
-          <span class="panel-badge hidden" id="letterBadge">ابحث عن وظائف أولاً</span>
-          <select class="select-input" id="letterSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
-        </div>
-        <button class="cta-link" id="btnLetter" disabled>اكتب الخطاب <span class="arrow">←</span></button>
-      </div>
-      <div class="panel-motif">
-        <div class="motif-blob motif-5"><div class="motif-icon" id="iconLetter"></div></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="service-panel reveal tint-2" data-card="applications" id="panelApplications">
-    <div class="container panel-inner align-left">
-      <div class="panel-motif">
-        <div class="motif-blob motif-6"><div class="motif-icon" id="iconApplications"></div></div>
-      </div>
-      <div class="panel-text">
-        <p class="eyebrow">تتبّع رحلتك</p>
-        <h2 class="section-heading">تقديماتي</h2>
-        <p class="section-desc">ملخص الوظائف اللي سجّلت تقديمك عليها.</p>
-        <button class="cta-link" id="btnApplications" disabled>اعرض تقديماتي <span class="arrow">←</span></button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= شريط الإحصائيات ================= -->
-  <section class="stats-band reveal">
-    <div class="container stats-inner">
-      <div class="stat">
-        <div class="stat-number">7</div>
-        <div class="stat-label">أدوات ذكية تعمل معاً</div>
-      </div>
-      <div class="stat">
-        <div class="stat-number">100%</div>
-        <div class="stat-label">قرار الأداة بيد النموذج</div>
-      </div>
-      <div class="stat">
-        <div class="stat-number">0%</div>
-        <div class="stat-label">نسبة الاختلاق المسموحة في أي اقتراح</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= منطقة النتائج ================= -->
-  <section class="results-section reveal" id="resultsSection">
-    <div class="container results-inner">
-      <p class="eyebrow">النتيجة</p>
-      <h2 class="section-heading">نتائج الخدمة</h2>
-      <div class="results-card" id="resultsCard">
-        <div class="results-empty" id="resultsEmpty">نتائج الخدمة اللي تختارها تظهر هنا.</div>
-        <div id="resultsContent"></div>
-      </div>
-    </div>
-  </section>
+  <!-- ================= شريط التبويبات السفلي (جوال) ================= -->
+  <nav class="bottom-tabs disabled" id="bottomTabs">
+    <button class="tab-item" type="button" data-service="titles"><span class="nav-icon" data-icon="titles"></span></button>
+    <button class="tab-item" type="button" data-service="search"><span class="nav-icon" data-icon="search"></span></button>
+    <button class="tab-item" type="button" data-service="match"><span class="nav-icon" data-icon="match"></span></button>
+    <button class="tab-item" type="button" data-service="improve"><span class="nav-icon" data-icon="improve"></span><span class="flagship-dot"></span></button>
+    <button class="tab-item" type="button" data-service="letter"><span class="nav-icon" data-icon="letter"></span></button>
+    <button class="tab-item" type="button" data-service="applications"><span class="nav-icon" data-icon="applications"></span></button>
+  </nav>
 
   <script src="app.js"></script>
 </body>
