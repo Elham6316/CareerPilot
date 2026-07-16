@@ -41,7 +41,7 @@ body {
   margin-bottom: 1.5rem;
 }
 .topbar-brand { display: flex; align-items: center; gap: 0.6rem; }
-.topbar-brand img { height: 32px; width: auto; display: block; }
+.topbar-brand img { height: 32px; width: 32px; display: block; object-fit: contain; }
 .topbar-brand span { font-weight: 700; font-size: 1.05rem; }
 .counter-pill {
   background: var(--purple-light);
@@ -58,8 +58,8 @@ body {
   overflow: hidden;
   background: var(--purple-light);
   border-radius: 28px;
-  min-height: 300px;
-  padding: 2.5rem;
+  min-height: 320px;
+  padding: 4rem 3rem;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
@@ -75,7 +75,6 @@ body {
 .hero-circle.c3 { width: 70px; height: 70px; top: 30px; left: 220px; opacity: 0.55; background: var(--primary); }
 .hero-circle.c4 { width: 50px; height: 50px; bottom: 60px; left: 20px; opacity: 0.5; background: var(--primary); }
 .hero-content { position: relative; z-index: 1; flex: 3; text-align: right; }
-.hero-content img.logo { height: 60px; width: auto; display: block; margin-bottom: 1rem; }
 .hero-title { font-weight: 700; font-size: 2.4rem; margin: 0 0 0.5rem; line-height: 1.25; }
 .hero-subtitle { color: var(--muted); font-size: 1.05rem; margin: 0 0 1.5rem; }
 .hero-cta {
@@ -94,19 +93,50 @@ body {
   transition: transform 0.15s ease;
 }
 .hero-cta:hover { transform: translateY(-1px); }
-.hero-deco { position: relative; flex: 2; height: 220px; z-index: 1; }
+.hero-deco { position: relative; flex: 2; height: 260px; z-index: 1; display: flex; align-items: center; justify-content: center; }
+.hero-illustration {
+  position: relative;
+  z-index: 2;
+  max-width: 100%;
+  max-height: 260px;
+  width: auto;
+  height: auto;
+}
+@media (max-width: 900px) {
+  .hero { flex-direction: column; padding: 2.5rem 2rem; text-align: center; }
+  .hero-content { text-align: center; }
+  .hero-deco { display: none; }
+}
 
 /* ---- رفع السيرة ---- */
 .upload-card {
   background: #fff;
   border: 2px dashed var(--primary);
   border-radius: 24px;
-  padding: 1.75rem;
+  padding: 2.3rem;
   margin-bottom: 2rem;
   text-align: center;
 }
-.upload-card h3 { margin: 0 0 0.3rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.upload-icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--purple-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.9rem;
+}
+.upload-card h3 { margin: 0 0 0.3rem; }
 .upload-card p { color: var(--muted); margin: 0 0 1.25rem; font-size: 0.92rem; }
+/* أكثر تخصصاً من ".upload-card p" عمداً عشان تفوز بلون/حجم مختلفين */
+.upload-card p.upload-eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
 .upload-dropzone {
   /* label عنصر inline افتراضياً، ما يجعل الحدود/الخلفية تنكسر لأجزاء منفصلة
      حول محتوى block بداخله (p) — نفرض flex عشان تصير صندوقاً واحداً متماسكاً. */
@@ -133,13 +163,22 @@ body {
   background: var(--success-bg);
   border: 1px solid var(--success);
   border-radius: 24px;
-  padding: 1.25rem 1.5rem;
+  padding: 1.6rem 2rem;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
   gap: 0.9rem;
 }
-.confirm-card .confirm-icon { flex-shrink: 0; }
+.confirm-card .confirm-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .confirm-card strong { display: block; }
 .confirm-card span { color: var(--muted); font-size: 0.9rem; }
 .hidden { display: none !important; }
@@ -148,7 +187,7 @@ body {
 .services-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  gap: 1.75rem;
   margin-bottom: 2rem;
 }
 @media (max-width: 860px) {
@@ -162,23 +201,36 @@ body {
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 1.25rem;
+  padding: 1.6rem;
   box-shadow: 0 6px 20px rgba(17, 17, 17, 0.04);
   display: flex;
   flex-direction: column;
   min-height: 260px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.service-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 14px 34px rgba(17, 17, 17, 0.1);
 }
 .service-card.emphasized { border: 2px solid var(--accent); }
+
+/* شارة الأيقونة الدائرية — الفجوة البصرية الأهم بين "مسطّح" و"premium" */
+.service-icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--purple-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+}
 
 .service-card-title {
   font-weight: 700;
   font-size: 1.02rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   margin: 0 0 0.2rem;
 }
-.service-card-title svg { flex-shrink: 0; }
 .service-card-desc { color: var(--muted); font-size: 0.83rem; margin: 0 0 0.75rem; }
 .service-card-badge {
   display: inline-block;
@@ -239,7 +291,7 @@ body {
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 1.5rem;
+  padding: 2rem;
   box-shadow: 0 6px 20px rgba(17, 17, 17, 0.04);
 }
 .results-empty { color: var(--muted); text-align: center; padding: 2rem 0; }

@@ -50,16 +50,17 @@ function formatReplyText(str) {
 }
 
 // ------------------------------------------------------------------
-// تهيئة الأيقونات الثابتة (عناوين البطاقات)
+// تهيئة شارات الأيقونات (badge دائري ملوّن لكل بطاقة، الأيقونة وحدها
+// بلا نص مدمج معها — العنوان أصبح عنصر h3 منفصل في HTML)
 // ------------------------------------------------------------------
-document.getElementById("iconTitles").innerHTML = icon("sparkle") + " اقتراح مسميات وظيفية";
-document.getElementById("iconSearch").innerHTML = icon("search") + " البحث عن وظائف";
-document.getElementById("iconMatch").innerHTML = icon("check") + " تقييم التوافق";
-document.getElementById("iconImprove").innerHTML = icon("star") + " تحسين السيرة الذاتية (ATS)";
-document.getElementById("iconLetter").innerHTML = icon("document") + " خطاب تقديم";
-document.getElementById("iconApplications").innerHTML = icon("list") + " تقديماتي";
-document.getElementById("uploadIconSlot").innerHTML = icon("arrow-up") + " ارفعي سيرتك الذاتية للبدء";
-document.getElementById("confirmIconSlot").innerHTML = icon("check", "#3F7A34", 26);
+document.getElementById("iconTitles").innerHTML = icon("sparkle", "#D3A0FD", 24);
+document.getElementById("iconSearch").innerHTML = icon("search", "#D3A0FD", 24);
+document.getElementById("iconMatch").innerHTML = icon("check", "#D3A0FD", 24);
+document.getElementById("iconImprove").innerHTML = icon("star", "#D3A0FD", 24);
+document.getElementById("iconLetter").innerHTML = icon("document", "#D3A0FD", 24);
+document.getElementById("iconApplications").innerHTML = icon("list", "#D3A0FD", 24);
+document.getElementById("uploadIconSlot").innerHTML = icon("arrow-up", "#D3A0FD", 24);
+document.getElementById("confirmIconSlot").innerHTML = icon("check", "#3F7A34", 24);
 
 // ------------------------------------------------------------------
 // رفع السيرة
