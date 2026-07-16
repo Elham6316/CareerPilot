@@ -53,6 +53,26 @@ function formatReplyText(str) {
 // تهيئة شارات الأيقونات (badge دائري ملوّن لكل بطاقة، الأيقونة وحدها
 // بلا نص مدمج معها — العنوان أصبح عنصر h3 منفصل في HTML)
 // ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// هيدر ثابت يكتسب ضبابية خلفية عند التمرير + ظهور تدريجي للأقسام
+// ------------------------------------------------------------------
+window.addEventListener("scroll", () => {
+  document.getElementById("siteHeader").classList.toggle("scrolled", window.scrollY > 20);
+});
+
+const revealObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  },
+  { threshold: 0.15 }
+);
+document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+
 document.getElementById("iconTitles").innerHTML = icon("sparkle", "#D3A0FD", 24);
 document.getElementById("iconSearch").innerHTML = icon("search", "#D3A0FD", 24);
 document.getElementById("iconMatch").innerHTML = icon("check", "#D3A0FD", 24);
@@ -152,6 +172,11 @@ function setServicesEnabled(enabled) {
     btn.disabled = !actuallyEnabled || !hasJobs;
     badge.classList.toggle("hidden", resumeReady ? hasJobs : true);
   });
+
+  // تعتيم اللوحة كاملة (نص + رسم) قبل رفع السيرة، لا الأزرار فقط
+  ["Titles", "Search", "Match", "Improve", "Letter", "Applications"].forEach((name) => {
+    document.getElementById(`panel${name}`).classList.toggle("panel-disabled", !enabled || limitReached);
+  });
 }
 
 function capitalize(s) {
@@ -174,6 +199,7 @@ function updateJobSelects() {
 // ------------------------------------------------------------------
 async function sendMessage(message) {
   showSkeleton();
+  document.getElementById("resultsSection").scrollIntoView({ behavior: "smooth", block: "start" });
 
   let resp, data;
   try {

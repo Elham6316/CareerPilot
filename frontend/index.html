@@ -6,46 +6,53 @@
   <title>CareerPilot</title>
   <link rel="icon" type="image/png" href="/assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="topbar-brand">
-        <img src="/assets/logo.png" alt="CareerPilot" width="32" height="32" />
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      <div class="brand">
+        <img src="/assets/logo.png" alt="CareerPilot" width="30" height="30" />
         <span>CareerPilot</span>
       </div>
       <div class="counter-pill" id="counterPill">الطلبات: 0 / 6</div>
     </div>
+  </header>
 
-    <section class="hero">
-      <div class="hero-content">
+  <!-- ================= Hero: كامل الشاشة، شعار واحد بالهيدر فقط ================= -->
+  <section class="hero" id="hero">
+    <div class="hero-blobs" aria-hidden="true">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+      <span class="blob b4"></span>
+    </div>
+    <div class="container hero-inner">
+      <div class="hero-copy">
         <h1 class="hero-title">ابدأ رحلتك المهنية</h1>
         <p class="hero-subtitle">مرشدك الذكي يبحث ويقيّم ويكتب نيابة عنك — بموافقتك دائماً</p>
-        <button class="hero-cta" id="heroCta">ارفع سيرتك للبدء</button>
+        <button class="cta-pill" id="heroCta">ارفع سيرتك للبدء</button>
       </div>
-      <div class="hero-deco">
-        <span class="hero-circle c1"></span>
-        <span class="hero-circle c2"></span>
-        <span class="hero-circle c3"></span>
-        <span class="hero-circle c4"></span>
-        <img
-          class="hero-illustration"
-          src="/assets/hero-illustration.svg"
-          alt="رسم توضيحي لشخص يبحث عن وظيفة ويراجع سيرته الذاتية"
-          onerror="this.style.display='none'"
-        />
-      </div>
-    </section>
+      <img
+        class="hero-illustration"
+        src="/assets/hero-illustration.svg"
+        alt="رسم توضيحي لشخص يبحث عن وظيفة ويراجع سيرته الذاتية"
+        onerror="this.style.display='none'"
+      />
+    </div>
+  </section>
 
-    <div id="uploadSection">
-      <div class="upload-card" id="uploadCard">
-        <div class="upload-icon-badge" id="uploadIconSlot"></div>
-        <p class="upload-eyebrow">الخطوة الأولى</p>
-        <h3>ارفع سيرتك الذاتية</h3>
-        <p>هذي الخطوة الأولى الإلزامية — بعدها تتفعّل كل الخدمات أدناه.</p>
-        <label class="upload-dropzone" id="dropzone" for="fileInput">
+  <!-- ================= رفع السيرة: شريط كامل العرض ================= -->
+  <section class="band upload-band reveal" id="uploadSection">
+    <div class="container band-inner">
+      <div id="uploadCard">
+        <p class="eyebrow">الخطوة الأولى</p>
+        <h2 class="section-heading">ارفع سيرتك الذاتية</h2>
+        <p class="section-desc">هذي الخطوة الأولى الإلزامية — بعدها تتفعّل كل الخدمات أدناه.</p>
+
+        <label class="dropzone" id="dropzone" for="fileInput">
+          <div class="dropzone-icon" id="uploadIconSlot"></div>
           <p>اسحب ملف PDF هنا أو اضغط لاختياره</p>
           <span>الحد الأقصى 200 ميغابايت</span>
         </label>
@@ -53,7 +60,7 @@
         <p class="upload-error hidden" id="uploadError"></p>
       </div>
 
-      <div class="confirm-card hidden" id="confirmCard">
+      <div class="confirm-state hidden" id="confirmCard">
         <span class="confirm-icon" id="confirmIconSlot"></span>
         <div>
           <strong>تم رفع السيرة الذاتية</strong>
@@ -61,82 +68,142 @@
         </div>
       </div>
     </div>
+  </section>
 
-    <div class="limit-card hidden" id="limitCard"></div>
+  <div class="container">
+    <div class="limit-banner hidden" id="limitCard"></div>
+  </div>
 
-    <div class="services-grid" id="servicesGrid">
-      <!-- بطاقة: اقتراح مسميات وظيفية -->
-      <div class="service-card" data-card="titles">
-        <div class="service-icon-badge" id="iconTitles"></div>
-        <h3 class="service-card-title">اقتراح مسميات وظيفية</h3>
-        <p class="service-card-desc">تحليل سيرتك واقتراح مسميات تناسب خبراتك.</p>
-        <div class="service-card-spacer"></div>
-        <button class="btn" id="btnTitles" disabled>اقترح لي مسميات</button>
+  <!-- ================= الخدمات: لوحات كاملة العرض متبادلة، لا شبكة بطاقات ================= -->
+  <section class="service-panel reveal tint-0" data-card="titles" id="panelTitles">
+    <div class="container panel-inner align-right">
+      <div class="panel-text">
+        <p class="eyebrow">حلّلي سيرتك أولاً</p>
+        <h2 class="section-heading">اقتراح مسميات وظيفية</h2>
+        <p class="section-desc">تحليل سيرتك واقتراح مسميات تناسب خبراتك.</p>
+        <button class="cta-link" id="btnTitles" disabled>اقترح لي مسميات <span class="arrow">←</span></button>
       </div>
+      <div class="panel-motif">
+        <div class="motif-blob motif-1"><div class="motif-icon" id="iconTitles"></div></div>
+      </div>
+    </div>
+  </section>
 
-      <!-- بطاقة: البحث عن وظائف -->
-      <div class="service-card" data-card="search">
-        <div class="service-icon-badge" id="iconSearch"></div>
-        <h3 class="service-card-title">البحث عن وظائف</h3>
-        <p class="service-card-desc">ابحث عن وظائف حقيقية حسب المسمى والمدينة.</p>
-        <div class="service-card-body">
+  <section class="service-panel reveal tint-1" data-card="search" id="panelSearch">
+    <div class="container panel-inner align-left">
+      <div class="panel-motif">
+        <div class="motif-blob motif-2"><div class="motif-icon" id="iconSearch"></div></div>
+      </div>
+      <div class="panel-text">
+        <p class="eyebrow">وظائف حقيقية</p>
+        <h2 class="section-heading">البحث عن وظائف</h2>
+        <p class="section-desc">ابحث عن وظائف حقيقية حسب المسمى والمدينة.</p>
+        <div class="panel-fields">
           <input class="field-input" id="searchTitleInput" placeholder="المسمى الوظيفي" disabled />
           <input class="field-input" id="searchCityInput" placeholder="المدينة" disabled />
         </div>
-        <button class="btn" id="btnSearch" disabled>ابحث الآن</button>
+        <button class="cta-link" id="btnSearch" disabled>ابحث الآن <span class="arrow">←</span></button>
       </div>
+    </div>
+  </section>
 
-      <!-- بطاقة: تقييم التوافق -->
-      <div class="service-card" data-card="match">
-        <div class="service-icon-badge" id="iconMatch"></div>
-        <h3 class="service-card-title">تقييم التوافق</h3>
-        <p class="service-card-desc">قيّم مدى توافق سيرتك مع وظيفة من نتائج بحثك.</p>
-        <div class="service-card-body">
-          <span class="service-card-badge hidden" id="matchBadge">ابحث عن وظائف أولاً</span>
+  <section class="service-panel reveal tint-2" data-card="match" id="panelMatch">
+    <div class="container panel-inner align-right">
+      <div class="panel-text">
+        <p class="eyebrow">قرار مبني على تحليل حقيقي</p>
+        <h2 class="section-heading">تقييم التوافق</h2>
+        <p class="section-desc">قيّم مدى توافق سيرتك مع وظيفة من نتائج بحثك.</p>
+        <div class="panel-fields">
+          <span class="panel-badge hidden" id="matchBadge">ابحث عن وظائف أولاً</span>
           <select class="select-input" id="matchSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
         </div>
-        <button class="btn" id="btnMatch" disabled>قيّم التوافق</button>
+        <button class="cta-link" id="btnMatch" disabled>قيّم التوافق <span class="arrow">←</span></button>
       </div>
+      <div class="panel-motif">
+        <div class="motif-blob motif-3"><div class="motif-icon" id="iconMatch"></div></div>
+      </div>
+    </div>
+  </section>
 
-      <!-- بطاقة: تحسين السيرة -->
-      <div class="service-card emphasized" data-card="improve">
-        <div class="service-icon-badge" id="iconImprove"></div>
-        <h3 class="service-card-title">تحسين السيرة الذاتية (ATS)</h3>
-        <p class="service-card-desc">حسّن سيرتك لتتوافق مع وظيفة محددة بصياغة متوافقة مع ATS.</p>
-        <div class="service-card-body">
-          <span class="service-card-badge hidden" id="improveBadge">ابحث عن وظائف أولاً</span>
+  <section class="service-panel reveal tint-0 emphasized" data-card="improve" id="panelImprove">
+    <div class="container panel-inner align-left">
+      <div class="panel-motif">
+        <div class="motif-blob motif-4"><div class="motif-icon" id="iconImprove"></div></div>
+      </div>
+      <div class="panel-text">
+        <p class="eyebrow eyebrow-accent">الخدمة الأهم</p>
+        <h2 class="section-heading">تحسين السيرة الذاتية (ATS)</h2>
+        <p class="section-desc">حسّن سيرتك لتتوافق مع وظيفة محددة بصياغة متوافقة مع ATS.</p>
+        <div class="panel-fields">
+          <span class="panel-badge hidden" id="improveBadge">ابحث عن وظائف أولاً</span>
           <select class="select-input" id="improveSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
         </div>
-        <button class="btn btn-accent" id="btnImprove" disabled>حسّن سيرتي</button>
+        <button class="cta-link cta-link-accent" id="btnImprove" disabled>حسّن سيرتي <span class="arrow">←</span></button>
       </div>
+    </div>
+  </section>
 
-      <!-- بطاقة: خطاب تقديم -->
-      <div class="service-card" data-card="letter">
-        <div class="service-icon-badge" id="iconLetter"></div>
-        <h3 class="service-card-title">خطاب تقديم</h3>
-        <p class="service-card-desc">خطاب تقديم مخصص مبني على سيرتك الحقيقية.</p>
-        <div class="service-card-body">
-          <span class="service-card-badge hidden" id="letterBadge">ابحث عن وظائف أولاً</span>
+  <section class="service-panel reveal tint-1" data-card="letter" id="panelLetter">
+    <div class="container panel-inner align-right">
+      <div class="panel-text">
+        <p class="eyebrow">جاهز للإرسال</p>
+        <h2 class="section-heading">خطاب تقديم</h2>
+        <p class="section-desc">خطاب تقديم مخصص مبني على سيرتك الحقيقية.</p>
+        <div class="panel-fields">
+          <span class="panel-badge hidden" id="letterBadge">ابحث عن وظائف أولاً</span>
           <select class="select-input" id="letterSelect" disabled><option>لا توجد نتائج بحث بعد</option></select>
         </div>
-        <button class="btn" id="btnLetter" disabled>اكتب الخطاب</button>
+        <button class="cta-link" id="btnLetter" disabled>اكتب الخطاب <span class="arrow">←</span></button>
       </div>
-
-      <!-- بطاقة: تقديماتي -->
-      <div class="service-card" data-card="applications">
-        <div class="service-icon-badge" id="iconApplications"></div>
-        <h3 class="service-card-title">تقديماتي</h3>
-        <p class="service-card-desc">ملخص الوظائف اللي سجّلت تقديمك عليها.</p>
-        <div class="service-card-spacer"></div>
-        <button class="btn" id="btnApplications" disabled>اعرض تقديماتي</button>
+      <div class="panel-motif">
+        <div class="motif-blob motif-5"><div class="motif-icon" id="iconLetter"></div></div>
       </div>
     </div>
+  </section>
 
-    <div class="results-card" id="resultsCard">
-      <div class="results-empty" id="resultsEmpty">نتائج الخدمة اللي تختارينها تظهر هنا.</div>
-      <div id="resultsContent"></div>
+  <section class="service-panel reveal tint-2" data-card="applications" id="panelApplications">
+    <div class="container panel-inner align-left">
+      <div class="panel-motif">
+        <div class="motif-blob motif-6"><div class="motif-icon" id="iconApplications"></div></div>
+      </div>
+      <div class="panel-text">
+        <p class="eyebrow">تتبّع رحلتك</p>
+        <h2 class="section-heading">تقديماتي</h2>
+        <p class="section-desc">ملخص الوظائف اللي سجّلت تقديمك عليها.</p>
+        <button class="cta-link" id="btnApplications" disabled>اعرض تقديماتي <span class="arrow">←</span></button>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- ================= شريط الإحصائيات ================= -->
+  <section class="stats-band reveal">
+    <div class="container stats-inner">
+      <div class="stat">
+        <div class="stat-number">7</div>
+        <div class="stat-label">أدوات ذكية تعمل معاً</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">قرار الأداة بيد النموذج</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">0%</div>
+        <div class="stat-label">نسبة الاختلاق المسموحة في أي اقتراح</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= منطقة النتائج ================= -->
+  <section class="results-section reveal" id="resultsSection">
+    <div class="container results-inner">
+      <p class="eyebrow">النتيجة</p>
+      <h2 class="section-heading">نتائج الخدمة</h2>
+      <div class="results-card" id="resultsCard">
+        <div class="results-empty" id="resultsEmpty">نتائج الخدمة اللي تختارها تظهر هنا.</div>
+        <div id="resultsContent"></div>
+      </div>
+    </div>
+  </section>
 
   <script src="app.js"></script>
 </body>
