@@ -6,15 +6,15 @@
 
 const SESSION_ID = crypto.randomUUID();
 const REVIEW_TOOLS = new Set(["improve_resume", "draft_cover_letter"]);
-const SERVICE_ICONS = { titles: "sparkle", search: "search", match: "check", improve: "star", letter: "document", applications: "list" };
+const SERVICE_ICONS = { titles: "sparkle", search: "search", match: "check", improve: "star", letter: "document" };
 const EMPTY_MESSAGES = {
   titles: "اضغط الزر لاقتراح مسميات وظيفية تناسب سيرتك.",
   search: "ابحث عن وظائف لعرض النتائج هنا.",
   match: "اختر وظيفة من نتائج بحثك لتقييم التوافق.",
   improve: "اختر وظيفة لتحسين سيرتك بما يتوافق معها.",
   letter: "اختر وظيفة لكتابة خطاب تقديم مخصص.",
-  applications: "اعرض ملخص تقديماتك هنا.",
 };
+const JOB_SELECT_ID = { match: "matchSelect", improve: "improveSelect", letter: "letterSelect" };
 
 let resumeReady = false;
 let requestCount = 0;
@@ -113,6 +113,40 @@ document.querySelectorAll(".nav-item, .tab-item").forEach((el) => {
 });
 
 // ------------------------------------------------------------------
+// "سلسلة موجّهة": نقلة فورية لخدمة أخرى مع تعبئة السياق وإطلاق الطلب
+// تلقائياً — تسريع فوق التنقل اليدوي، لا بديل عنه (يبقى يعمل دائماً).
+// التبديل + عرض skeleton يحدثان بنفس اللحظة المتزامنة قبل أي انتظار شبكة،
+// لأن sendMessage() تستدعي showSkeleton() فوراً قبل أول await بداخلها.
+// ------------------------------------------------------------------
+function activatePane(service) {
+  activeService = service;
+  document.querySelectorAll(".nav-item, .tab-item").forEach((el) => {
+    el.classList.toggle("active", el.dataset.service === service);
+  });
+  document.querySelectorAll(".service-pane").forEach((el) => {
+    el.classList.toggle("hidden", el.dataset.service !== service);
+  });
+}
+
+function chainToSearch(title) {
+  activatePane("search");
+  document.getElementById("searchTitleInput").value = title;
+  const city = document.getElementById("searchCityInput").value.trim();
+  const message = city ? `ابحث لي عن وظائف ${title} في ${city}` : `ابحث لي عن وظائف ${title}`;
+  sendMessage(message);
+}
+
+function chainToJob(service, job, message) {
+  activatePane(service);
+  const selectId = JOB_SELECT_ID[service];
+  if (selectId && job) {
+    const idx = latestJobs.findIndex((j) => j.title === job.title && j.company === job.company);
+    if (idx >= 0) document.getElementById(selectId).value = String(idx);
+  }
+  sendMessage(message, job);
+}
+
+// ------------------------------------------------------------------
 // رفع السيرة (يُستخدم أيضاً لمسار "استبدال" لاحقاً — نفس الدالة)
 // ------------------------------------------------------------------
 const dropzone = document.getElementById("dropzone");
@@ -192,7 +226,6 @@ function setServicesEnabled(enabled) {
   const actuallyEnabled = enabled && !limitReached;
 
   document.getElementById("btnTitles").disabled = !actuallyEnabled;
-  document.getElementById("btnApplications").disabled = !actuallyEnabled;
   document.getElementById("searchTitleInput").disabled = !actuallyEnabled;
   document.getElementById("searchCityInput").disabled = !actuallyEnabled;
   document.getElementById("btnSearch").disabled = !actuallyEnabled;
@@ -237,7 +270,7 @@ function updateMeter() {
 // ------------------------------------------------------------------
 // إرسال رسالة للوكيل — المسار الوحيد لكل الأزرار
 // ------------------------------------------------------------------
-async function sendMessage(message) {
+async function sendMessage(message, jobContext = null) {
   const requestedService = activeService;
   showSkeleton();
 
@@ -283,6 +316,7 @@ async function sendMessage(message) {
     updateJobSelects();
   }
 
+  data.__jobContext = jobContext;
   serviceResultCache[requestedService] = data;
   if (requestedService === activeService) {
     renderResult(data);
@@ -342,6 +376,8 @@ function renderResult(data) {
     return;
   }
 
+  const jobContext = data.__jobContext || null;
+
   switch (last.name) {
     case "suggest_job_titles":
       renderTitles(last.result, data.reply);
@@ -350,7 +386,7 @@ function renderResult(data) {
       renderJobs(last.result, data.reply);
       break;
     case "evaluate_match":
-      renderMatch(last.result, data.reply);
+      renderMatch(last.result, data.reply, jobContext);
       break;
     case "improve_resume":
       renderReview(last.result.improved_resume, last.result.changes, last.result.warning, "improved_resume.txt", data.reply);
@@ -383,7 +419,7 @@ function renderTitles(result, replyText) {
     .join("");
   container.innerHTML = `<div class="titles-pills">${pills}</div>`;
   container.querySelectorAll(".title-pill").forEach((btn) => {
-    btn.addEventListener("click", () => sendMessage(`اختار ${btn.dataset.title}`));
+    btn.addEventListener("click", () => chainToSearch(btn.dataset.title));
   });
   animateIn();
 }
@@ -398,7 +434,7 @@ function renderJobs(result, replyText) {
   }
   const cards = jobs
     .map(
-      (j) => `
+      (j, i) => `
     <div class="job-card">
       <div class="job-card-top">
         <h4 class="job-title">${escapeHtml(j.title)}</h4>
@@ -406,25 +442,49 @@ function renderJobs(result, replyText) {
       </div>
       <p class="job-location">${icon("pin", "#5F5F5F", 14)} ${escapeHtml(j.location)}</p>
       ${j.snippet ? `<p class="job-snippet">${escapeHtml(j.snippet)}</p>` : ""}
-      <a class="job-link" href="${escapeHtml(j.link)}" target="_blank" rel="noopener">عرض الإعلان الأصلي ←</a>
+      <div class="job-card-actions">
+        <a class="job-link" href="${escapeHtml(j.link)}" target="_blank" rel="noopener">عرض الإعلان الأصلي ←</a>
+        <button class="btn job-inline-btn" type="button" data-index="${i}">قيّم التوافق مع هذي الوظيفة</button>
+      </div>
     </div>`
     )
     .join("");
   container.innerHTML = `
     <div class="jobs-list">${cards}</div>
     <p class="legitimacy-notice">تحقق من شرعية الشركة قبل التقديم — النتائج مستمدة من محرك تجميع (Jooble).</p>`;
+  container.querySelectorAll(".job-inline-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const job = jobs[Number(btn.dataset.index)];
+      chainToJob("match", job, `قيّم توافق سيرتي مع وظيفة ${job.title} في شركة ${job.company}`);
+    });
+  });
   animateIn();
 }
 
-function renderMatch(result, replyText) {
+function renderMatch(result, replyText, jobContext) {
   const score = result.match_score ?? 0;
   const tier = score >= 70 ? "high" : score >= 40 ? "mid" : "low";
   const container = document.getElementById("resultsContent");
+  const followUps = jobContext
+    ? `<div class="chain-actions">
+        <button class="btn" id="chainImprove" type="button">حسّن سيرتي لهذي الوظيفة</button>
+        <button class="btn" id="chainLetter" type="button">اكتب خطاب تقديم</button>
+      </div>`
+    : "";
   container.innerHTML = `
     <div class="match-card">
       <div class="match-score-badge ${tier}">${score}%</div>
       <div class="match-reasoning">${formatReplyText(result.reasoning || replyText)}</div>
-    </div>`;
+    </div>
+    ${followUps}`;
+  if (jobContext) {
+    document.getElementById("chainImprove").addEventListener("click", () => {
+      chainToJob("improve", jobContext, `حسّن سيرتي الذاتية لتتوافق مع وظيفة ${jobContext.title} في شركة ${jobContext.company}`);
+    });
+    document.getElementById("chainLetter").addEventListener("click", () => {
+      chainToJob("letter", jobContext, `اكتب لي خطاب تقديم لوظيفة ${jobContext.title} في شركة ${jobContext.company}`);
+    });
+  }
   animateIn();
 }
 
@@ -526,23 +586,19 @@ document.getElementById("btnSearch").addEventListener("click", () => {
 document.getElementById("btnMatch").addEventListener("click", () => {
   const job = latestJobs[document.getElementById("matchSelect").value];
   if (!job) return;
-  sendMessage(`قيّم توافق سيرتي مع وظيفة ${job.title} في شركة ${job.company}`);
+  sendMessage(`قيّم توافق سيرتي مع وظيفة ${job.title} في شركة ${job.company}`, job);
 });
 
 document.getElementById("btnImprove").addEventListener("click", () => {
   const job = latestJobs[document.getElementById("improveSelect").value];
   if (!job) return;
-  sendMessage(`حسّن سيرتي الذاتية لتتوافق مع وظيفة ${job.title} في شركة ${job.company}`);
+  sendMessage(`حسّن سيرتي الذاتية لتتوافق مع وظيفة ${job.title} في شركة ${job.company}`, job);
 });
 
 document.getElementById("btnLetter").addEventListener("click", () => {
   const job = latestJobs[document.getElementById("letterSelect").value];
   if (!job) return;
-  sendMessage(`اكتب لي خطاب تقديم لوظيفة ${job.title} في شركة ${job.company}`);
-});
-
-document.getElementById("btnApplications").addEventListener("click", () => {
-  sendMessage("اعرض ملخص تقديماتي");
+  sendMessage(`اكتب لي خطاب تقديم لوظيفة ${job.title} في شركة ${job.company}`, job);
 });
 
 updateMeter();
