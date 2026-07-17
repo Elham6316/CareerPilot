@@ -343,7 +343,7 @@ h1, .display, .brand-name, .step-num, .count {
      illustration.png (سكربت Pillow، لا تخمين بصري) — #F8F179، مختلف
      ملحوظاً عن --accent #ECFF70 (الأخير أخضر-ليموني أكثر)، لذا طُبِّق هنا
      فقط محلياً ولم يُغيَّر --accent العام المستخدم بالأزرار/الشارات. */
-  background: #F8F179;
+  background: #ECFF70;
   z-index: -1;
   border-radius: 3px;
   transform: rotate(-1deg);
