@@ -18,7 +18,7 @@ const JOB_SELECT_ID = { match: "matchSelect", improve: "improveSelect", letter: 
 
 let resumeReady = false;
 let requestCount = 0;
-let requestLimit = 6;
+let requestLimit = 1;
 let latestJobs = [];
 let activeService = null;
 let serviceResultCache = {}; // { [service]: lastApiResponseData }

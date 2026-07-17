@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from agent import run_agent, wrap_resume_text
 from tools.resume_parser import extract_resume_text
 
-MAX_REQUESTS_PER_SESSION = 6
+MAX_REQUESTS_PER_SESSION = 1
 
 app = FastAPI(title="CareerPilot API")
 
