@@ -290,6 +290,9 @@ h1, .display, .brand-name, .step-num, .count {
   align-items: center;
   justify-content: center;
 }
+@media (prefers-reduced-motion: no-preference) {
+  .upload-hero-visual { opacity: 0; animation: heroFadeUp 500ms ease-out 300ms forwards; }
+}
 
 /* الدائرة والرسم داخل والد واحد موضعه relative — يضمن أن يتحركا كوحدة
    واحدة بأي عرض شاشة، بدل عنصرين منفصلين بوحدات قياس مختلفة (كانت
@@ -303,6 +306,16 @@ h1, .display, .brand-name, .step-num, .count {
   background: radial-gradient(circle at 35% 35%, var(--secondary), var(--purple-light) 72%);
   opacity: 0.7;
 }
+/* انجراف خفيف مستمر للدائرة العضوية خلف الرسم — عنصر منفصل عن الرسم نفسه
+   (transform مستقل تماماً، لا تصادم مع تمركز/طفو الرسم أدناه)، وعن
+   .bg-blob العامة site-wide (خارج نطاق هذي المهمة "قسم الهيرو فقط"). */
+@media (prefers-reduced-motion: no-preference) {
+  .upload-hero-circle { animation: heroCircleDrift 10s ease-in-out infinite alternate; }
+}
+@keyframes heroCircleDrift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(8px, 10px); }
+}
 
 .upload-illustration {
   position: absolute;
@@ -314,7 +327,10 @@ h1, .display, .brand-name, .step-num, .count {
   transform: translate(-50%, -50%);
 }
 @media (prefers-reduced-motion: no-preference) {
-  .upload-illustration { animation: illustration-float 4s ease-in-out infinite; }
+  /* animation-delay:800ms — يبدأ الطفو فقط بعد اكتمال دخول .upload-hero-
+     visual (تأخير 300ms + مدة 500ms = 800ms)، لا يتزامنان. الحركة نفسها
+     (illustration-float) بلا أي تعديل على تعريفها — فقط توقيت بدايتها. */
+  .upload-illustration { animation: illustration-float 4s ease-in-out 800ms infinite; }
 }
 /* التمركز (translate -50%,-50%) مدموج بكل إطار حركة عمداً — لا يمكن ترك
    الحركة تستبدل transform كاملاً وإلا فقدت التمركز عند كل دورة طفو. */
@@ -322,10 +338,23 @@ h1, .display, .brand-name, .step-num, .count {
   0%, 100% { transform: translate(-50%, -50%) translateY(0); }
   50% { transform: translate(-50%, -50%) translateY(-10px); }
 }
+/* دخول تدريجي متعاقب لعناصر الهيرو النصية عند تحميل الصفحة — opacity+
+   transform فقط (خصائص compositor بحتة) عمداً، لا تُحرِّك أي خاصية تخطيط
+   (width/height/margin) فتبقى نسبة CLS صفراً. مُقيَّدة بالكامل داخل
+   prefers-reduced-motion:no-preference — الحالة الافتراضية خارج الاستعلام
+   تبقى opacity:1 دائماً، فمستخدمو تقليل الحركة يرون المحتوى كاملاً فوراً
+   بلا أي وميض اختفاء. */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .upload-title {
   font-weight: 800;
   font-size: clamp(1.9rem, 2.4vw + 1rem, 2.7rem);
   margin: 0 0 0.6rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .upload-title { opacity: 0; animation: heroFadeUp 500ms ease-out 0ms forwards; }
 }
 /* تمييز "رحلتك المهنية" بخط ليموني تحتي مائل، بنفس أسلوب design_reference.html */
 .upload-title .mark {
@@ -343,7 +372,7 @@ h1, .display, .brand-name, .step-num, .count {
      illustration.png (سكربت Pillow، لا تخمين بصري) — #F8F179، مختلف
      ملحوظاً عن --accent #ECFF70 (الأخير أخضر-ليموني أكثر)، لذا طُبِّق هنا
      فقط محلياً ولم يُغيَّر --accent العام المستخدم بالأزرار/الشارات. */
-  background: #F8F179;
+  background: #ECFF70;
   z-index: -1;
   border-radius: 3px;
   transform: rotate(-1deg);
@@ -354,6 +383,21 @@ h1, .display, .brand-name, .step-num, .count {
   line-height: 1.8;
   max-width: 46ch;
   margin: 0 0 1.75rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .upload-subtitle { opacity: 0; animation: heroFadeUp 500ms ease-out 100ms forwards; }
+}
+
+/* غلاف دخول منفصل عن .dropzone نفسه عمداً — علة حقيقية اكتُشفت بالتحقق:
+   حركة CSS بـfill-mode:forwards تبقى "مالكة" لخاصية transform فعلياً
+   بأولوية أعلى من قواعد :hover العادية طول عمر الصفحة (سلوك موثّق لحركات
+   forwards/both)، فكانت تُسكِت transform:scale(1.03) عند المرور بصمت. نقل
+   حركة الدخول لعنصر أب يحرّرها بالكامل تفاعلات hover/active الخاصة بها. */
+.dropzone-enter { width: 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  /* دخول الدروب زون كـCTA الهيرو الوحيد الفعلي (لا يوجد زر منفصل بهذا
+     التصميم) — آخر عنصر بالتعاقب (200ms) بعد العنوان والعبارة الفرعية. */
+  .dropzone-enter { opacity: 0; animation: heroFadeUp 500ms ease-out 200ms forwards; }
 }
 
 .dropzone {
@@ -369,9 +413,13 @@ h1, .display, .brand-name, .step-num, .count {
   padding: 2.4rem 1.75rem 1.75rem;
   cursor: pointer;
   position: relative;
-  transition: border-color 200ms ease, background 200ms ease, transform 150ms ease;
+  transition: border-color 200ms ease, background 200ms ease, transform 150ms ease, box-shadow 150ms ease;
 }
-.dropzone:hover { border-color: var(--primary); background: var(--purple-light); }
+/* تكبير خفيف + ظل أعمق عند المرور، وانضغاط بسيط عند الضغط — تغذية راجعة
+   لمسية على CTA الهيرو، لا تتصادم مع .dragover (يبقى بلا تغيير، يفوز
+   بالترتيب المتأخر بالـcascade عند تزامن السحب مع المرور). */
+.dropzone:hover { border-color: var(--primary); background: var(--purple-light); transform: scale(1.03); box-shadow: 0 14px 30px -16px rgba(211, 160, 253, 0.55); }
+.dropzone:active { transform: scale(0.98); }
 .dropzone.dragover { border-color: var(--primary); background: var(--accent-tint); transform: scale(1.01); }
 .dropzone:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
 .dropzone p { width: 100%; margin: 0 0 0.3rem; font-weight: 700; font-size: 1.02rem; text-align: center; }

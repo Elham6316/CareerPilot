@@ -88,32 +88,34 @@
             <h1 class="upload-title">ابدأ <span class="mark">رحلتك المهنية</span></h1>
             <p class="upload-subtitle">ارفع سيرتك الذاتية لتفعيل كل الخدمات — من تقييم التوافق إلى خطاب التقديم، في مكان واحد.</p>
 
-            <label class="dropzone" id="dropzone" for="fileInput" tabindex="0">
-              <input type="file" id="fileInput" accept="application/pdf" />
+            <div class="dropzone-enter">
+              <label class="dropzone" id="dropzone" for="fileInput" tabindex="0">
+                <input type="file" id="fileInput" accept="application/pdf" />
 
-              <div class="icon-cluster" aria-hidden="true">
-                <div class="doc-chip a">
-                  <div class="ln"></div><div class="ln"></div><div class="ln"></div>
-                  <div class="badge">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <div class="icon-cluster" aria-hidden="true">
+                  <div class="doc-chip a">
+                    <div class="ln"></div><div class="ln"></div><div class="ln"></div>
+                    <div class="badge">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                  </div>
+                  <div class="doc-chip b">
+                    <div class="ln"></div><div class="ln"></div><div class="ln"></div>
+                  </div>
+                  <div class="upload-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
                   </div>
                 </div>
-                <div class="doc-chip b">
-                  <div class="ln"></div><div class="ln"></div><div class="ln"></div>
-                </div>
-                <div class="upload-badge">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-                </div>
-              </div>
 
-              <p>اسحب ملف <span class="accent-text">PDF</span> هنا أو اضغط لاختياره</p>
-              <span>الحد الأقصى 200 ميغابايت</span>
+                <p>اسحب ملف <span class="accent-text">PDF</span> هنا أو اضغط لاختياره</p>
+                <span>الحد الأقصى 200 ميغابايت</span>
 
-              <div class="chip-row">
-                <span class="filetype-chip">PDF</span>
-                <span class="filetype-chip">حتى 200MB</span>
-              </div>
-            </label>
+                <div class="chip-row">
+                  <span class="filetype-chip">PDF</span>
+                  <span class="filetype-chip">حتى 200MB</span>
+                </div>
+              </label>
+            </div>
             <p class="upload-error hidden" id="uploadError"></p>
           </div>
 
