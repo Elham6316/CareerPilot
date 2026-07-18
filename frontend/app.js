@@ -18,7 +18,7 @@ const JOB_SELECT_ID = { match: "matchSelect", improve: "improveSelect", letter: 
 
 let resumeReady = false;
 let requestCount = 0;
-let requestLimit = 1;
+let requestLimit = 6;
 let latestJobs = [];
 let activeService = null;
 let serviceResultCache = {}; // { [service]: lastApiResponseData }
@@ -177,11 +177,25 @@ fileInput.addEventListener("change", () => {
   if (fileInput.files[0]) handleUpload(fileInput.files[0]);
 });
 
+// #uploadError عنصر داخل #uploadState، يختفي معه بعد أول رفع ناجح — لو
+// حاول المستخدم رفعاً ثانياً عبر زر "استبدال" (الآن مرفوض دوماً من
+// الخادم: سيرة واحدة فقط طوال عمر الجلسة)، رسالة الخطأ يجب أن تظهر عبر
+// عنصر مرئي دائماً بالشريط الجانبي (limitCard) بدل عنصر مخفي بلا فائدة.
+function showUploadError(message) {
+  if (document.getElementById("uploadState").classList.contains("hidden")) {
+    const card = document.getElementById("limitCard");
+    card.textContent = message;
+    card.classList.remove("hidden");
+  } else {
+    uploadError.textContent = message;
+    uploadError.classList.remove("hidden");
+  }
+}
+
 async function handleUpload(file) {
   uploadError.classList.add("hidden");
   if (!file.name.toLowerCase().endsWith(".pdf")) {
-    uploadError.textContent = "الملف يجب أن يكون PDF.";
-    uploadError.classList.remove("hidden");
+    showUploadError("الملف يجب أن يكون PDF.");
     return;
   }
 
@@ -196,8 +210,7 @@ async function handleUpload(file) {
     });
     const data = await resp.json();
     if (!resp.ok) {
-      uploadError.textContent = stripEmoji(data.detail) || "تعذّر رفع الملف.";
-      uploadError.classList.remove("hidden");
+      showUploadError(stripEmoji(data.detail) || "تعذّر رفع الملف.");
       return;
     }
 
@@ -207,14 +220,12 @@ async function handleUpload(file) {
     document.getElementById("fileChip").classList.remove("hidden");
     document.getElementById("confirmFilename").textContent = data.filename;
 
-    // سيرة جديدة تُبطل أي نتائج/وظائف من السيرة السابقة (مسار "استبدال")
     serviceResultCache = {};
     latestJobs = [];
     updateJobSelects();
     selectService(activeService || "titles");
   } catch (err) {
-    uploadError.textContent = "تعذّر الاتصال بالخادم — تأكد من تشغيل السيرفر.";
-    uploadError.classList.remove("hidden");
+    showUploadError("تعذّر الاتصال بالخادم — تأكد من تشغيل السيرفر.");
   }
 }
 

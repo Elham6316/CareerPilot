@@ -413,12 +413,14 @@ h1, .display, .brand-name, .step-num, .count {
   padding: 2.4rem 1.75rem 1.75rem;
   cursor: pointer;
   position: relative;
-  transition: border-color 200ms ease, background 200ms ease, transform 150ms ease, box-shadow 150ms ease;
+  transition: border-color 200ms ease, background 200ms ease, transform 150ms ease;
 }
-/* تكبير خفيف + ظل أعمق عند المرور، وانضغاط بسيط عند الضغط — تغذية راجعة
-   لمسية على CTA الهيرو، لا تتصادم مع .dragover (يبقى بلا تغيير، يفوز
-   بالترتيب المتأخر بالـcascade عند تزامن السحب مع المرور). */
-.dropzone:hover { border-color: var(--primary); background: var(--purple-light); transform: scale(1.03); box-shadow: 0 14px 30px -16px rgba(211, 160, 253, 0.55); }
+/* تكبير خفيف عند المرور، وانضغاط بسيط عند الضغط — تغذية راجعة لمسية على
+   CTA الهيرو. لا box-shadow هنا عمداً — أُزيل ظل كان مضافاً بجولة سابقة،
+   رجوعاً للحدود المتقطعة البسيطة بلا أي ظل، بطلب صريح. لا تتصادم مع
+   .dragover (يبقى بلا تغيير، يفوز بالترتيب المتأخر بالـcascade عند
+   تزامن السحب مع المرور). */
+.dropzone:hover { border-color: var(--primary); background: var(--purple-light); transform: scale(1.03); }
 .dropzone:active { transform: scale(0.98); }
 .dropzone.dragover { border-color: var(--primary); background: var(--accent-tint); transform: scale(1.01); }
 .dropzone:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }

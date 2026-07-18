@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from agent import run_agent, wrap_resume_text
 from tools.resume_parser import extract_resume_text
 
-MAX_REQUESTS_PER_SESSION = 1
+MAX_REQUESTS_PER_SESSION = 6
 
 app = FastAPI(title="CareerPilot API")
 
@@ -49,6 +49,16 @@ async def upload_resume(
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="الملف يجب أن يكون PDF.")
 
+    # قيد منفصل تماماً عن عدّاد الطلبات (MAX_REQUESTS_PER_SESSION): سيرة
+    # ذاتية واحدة فقط طوال عمر الجلسة، يمنع رفع ملفات متعددة للالتفاف على
+    # أي قيد. يُتحقَّق قبل أي معالجة للملف الجديد لتفادي عمل غير لازم.
+    session = get_session(x_session_id)
+    if session["resume_filename"] is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="سيرتك الذاتية مسجّلة أصلاً لهذي الجلسة، لا يمكن استبدالها.",
+        )
+
     tmp_path = None
     try:
         contents = await file.read()
@@ -63,7 +73,6 @@ async def upload_resume(
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
 
-    session = get_session(x_session_id)
     session["pending_prefix"] = wrap_resume_text(resume_text)
     session["resume_filename"] = file.filename
 
