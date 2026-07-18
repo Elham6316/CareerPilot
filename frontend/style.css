@@ -289,6 +289,9 @@ h1, .display, .brand-name, .step-num, .count {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* موضع الأصل الآن لـ.partner-area — عمود الرسم كاملاً، لا الدائرة
+     وحدها، فتتّسع مساحة التناثر خارج محيط الدائرة (طلب صريح). */
+  position: relative;
 }
 @media (prefers-reduced-motion: no-preference) {
   .upload-hero-visual { opacity: 0; animation: heroFadeUp 500ms ease-out 300ms forwards; }
@@ -300,6 +303,10 @@ h1, .display, .brand-name, .step-num, .count {
    تماماً — ينحرفان عن بعض حتماً بأي عرض غير الذي عُوير عليه يدوياً). */
 .upload-hero-circle {
   position: relative;
+  /* z-index:1 صريح — تضمن أن الدائرة (وابنها الرسم) تُرسَم فوق
+     .partner-area (z-index:0) رغم كونهما الآن شقيقين بنفس الوالد، لا
+     أباً وابناً كما كانت. */
+  z-index: 1;
   width: clamp(220px, 30vw, 460px);
   aspect-ratio: 1;
   border-radius: 50%;
@@ -320,11 +327,16 @@ h1, .display, .brand-name, .step-num, .count {
 /* ---------------------------------------------------------------- */
 /* شارات أيقونات عامة متناثرة عضوياً حول تكوين الهيرو — HTML/CSS بحت    */
 /* ---------------------------------------------------------------- */
-/* .partner-area ابن لـ.upload-hero-circle عمداً: نفس سياق التراص للرسم
-   (stacking context عبر opacity على الدائرة)، فالشارات (z-index:0) تقع
-   بين خلفية الدائرة والرسم (z-index:1)، ويتراكب الرسم فوق ما يقترب من
-   حوافه طبيعياً. inset:0 = صندوق الدائرة تماماً، فمواضع %top/%left تتحجّم
-   تلقائياً مع الدائرة (clamp) بلا حساب إضافي. */
+/* .partner-area شقيق لـ.upload-hero-circle (لا ابن لها) — والده
+   .upload-hero-visual (عمود الرسم كاملاً)، فـinset:0 يغطي عرض/ارتفاع
+   العمود بأكمله لا صندوق الدائرة وحده. هذا يمنح مساحة تناثر أوسع فعلياً
+   من محيط الدائرة (العمود أعرض من الدائرة بنسبة ~10% على سطح المكتب،
+   طبيعة flex+justify-content:center)، فيمكن لمواضع %top/%left دفع بعض
+   الشارات خارج حافة الدائرة فعلياً — وهو ما كان مستحيلاً هندسياً حين كانت
+   .partner-area محصورة داخل صندوق الدائرة نفسها (علة حقيقية اكتُشفت
+   وأُصلحت هذي الجولة). z-index:0 يبقيها خلف الدائرة (z-index:1) في
+   التراكب — الشارات المتراكبة مع صندوق الدائرة تظهر خافتة خلف تدرّجها
+   شبه الشفاف (opacity:0.7)، والشارات خارج الصندوق تظهر كاملة الوضوح. */
 .partner-area { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 
 .partner-logo {
@@ -337,8 +349,9 @@ h1, .display, .brand-name, .step-num, .count {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(211, 160, 253, 0.15);
-  backdrop-filter: blur(12px);
+  /*backdrop-filter: blur(12px); */
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   box-shadow: 0 10px 30px rgba(211, 160, 253, 0.12), 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 .partner-logo svg { width: 46%; height: 46%; opacity: 0.95; }
@@ -361,16 +374,22 @@ h1, .display, .brand-name, .step-num, .count {
   75% { transform: translate(-2px, -5px) rotate(-1deg); }
 }
 
-/* مواضع متناثرة غير متماثلة حول المحيط (بعضها قرب الرسم، بعضها أبعد قرب
-   حافة الدائرة) — لا حلقة، لا خطوط، فراغ سخي بينها. مُعايَرة على تكوين
-   هذا الموقع الفعلي (الرسم يشغل الوسط ~15-85%)، فالشارات بالمنطقة
-   الطرفية المرئية حوله. */
-.partner-logo.icon-search    { top: 4%;  left: 40%; }
-.partner-logo.icon-resume    { top: 17%; left: 78%; }
-.partner-logo.icon-star      { top: 52%; left: 88%; }
-.partner-logo.icon-chat      { top: 78%; left: 14%; }
-.partner-logo.icon-growth    { top: 38%; left: 2%;  }
-.partner-logo.icon-submitted { top: 82%; left: 64%; }
+/* مواضع متناثرة غير متماثلة، محسوبة الآن نسبة لعمود الرسم الأوسع (لا
+   الدائرة وحدها) — بعضها يتجاوز فعلياً محيط الدائرة إلى الفراغ المحيط
+   (مؤكَّد بالقياس البرمجي: مسافة كل شارة عن مركز الدائرة مقارنةً بنصف
+   قطرها)، بعضها أقرب لحافة الدائرة، بفراغ سخي بينها ولا حلقة/خطوط. */
+/* الشارتان اليمينيتان بـ`right:` لا `left:` عمداً — `left:X%` يموضع
+   الحافة اليسرى للشارة فقط، فعرضها الخاص (30-40px متجاوب) قد يدفع حافتها
+   اليمنى خارج الحاوية عند نسب قريبة من 100% (علة حقيقية اكتُشفت بالقياس:
+   `left:97%` بحاوية 339px موبايل كانت تُخرج الشارة 17px خارج الحدّ).
+   `right:X%` يضمن هامشاً X% من الحافة اليمنى دوماً بصرف النظر عن عرض
+   الشارة، فيستحيل الفيض يميناً هندسياً. */
+.partner-logo.icon-search    { top: 1%;  left: 44%; }
+.partner-logo.icon-resume    { top: 9%;  right: 3%; }
+.partner-logo.icon-star      { top: 50%; right: 1%; }
+.partner-logo.icon-chat      { top: 90%; left: 8%;  }
+.partner-logo.icon-growth    { top: 34%; left: 3%;  }
+.partner-logo.icon-submitted { top: 94%; left: 60%; }
 
 /* أشكال زخرفية دقيقة جداً */
 .dot, .square, .sparkle { position: absolute; opacity: 0.18; }
@@ -1004,6 +1023,17 @@ h1, .display, .brand-name, .step-num, .count {
      (margin:auto لا justify-content هنا لأن .upload-hero-visual صار
      بعرض 100% بعد التكديس). */
   .upload-hero-circle { width: clamp(200px, 40vw, 300px); margin: 0 auto; }
+  /* بالتخطيط المكدّس .upload-hero-visual يصبح بعرض 100% (قد يتجاوز 700px
+     بعروض تابلت وسيطة)، بينما الدائرة أصغر بكثير (≤300px) — تناثر الشارات
+     بلا سقف كان سيبعدها جداً عن التكوين (طلب صريح: "adjust scatter radius
+     proportionally down on mobile"). نُقيّد .partner-area بعرض أقصى معتدل
+     ونمركزه، فتبقى نسبة التناثر خارج الدائرة مشابهة لسطح المكتب لا مبالَغاً
+     فيها. */
+  .partner-area {
+    inset: 0 auto 0 50%;
+    transform: translateX(-50%);
+    width: min(420px, 100%);
+  }
   .dropzone { max-width: 480px; margin: 0 auto; }
 }
 
