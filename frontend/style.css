@@ -317,45 +317,95 @@ h1, .display, .brand-name, .step-num, .count {
   to { transform: translate(8px, 10px); }
 }
 
-/* طبقة جسيمات زخرفية خفيفة جداً بين خلفية الدائرة (أسفل) والرسم (أعلى) —
-   حاوية مقصوصة تماماً بحدود الدائرة (overflow:hidden + border-radius:50%
-   مطابقان لها) فلا تفلت أي نقطة خارجها مهما بلغ انجرافها الرأسي. عنصر
-   ابن لـ.upload-hero-circle عمداً — يتحرك معها تلقائياً بانجرافها الخفيف
-   القائم (heroCircleDrift) بلا أي كود إضافي. */
-.hero-particles {
+/* ---------------------------------------------------------------- */
+/* مدار أيقونات زخرفي حول دائرة الهيرو — HTML/CSS بحت، دوران بطيء       */
+/* ---------------------------------------------------------------- */
+/* الحلقة والشارات ابن لـ.upload-hero-circle عمداً: نفس سياق التراص
+   (stacking context) للرسم — فتقع بينه (z-index:1) وخلفية الدائرة، ويتراكب
+   الرسم فوقها عند حوافه طبيعياً. حجمها clamp() موازٍ لحجم الدائرة بمعامل
+   1.35 تماماً (نفس نقاط انكسار vw، فتتناسب معها بأي عرض). --orbit-size
+   طول فعلي (لا %) لأن translateY(%) يُحسب على ارتفاع العنصر نفسه لا
+   حاويته (مصيدة CSS)، فنمرّر نصف القطر بالبكسل عبر calc. */
+.hero-orbit {
+  /* 1.35× حجم الدائرة (clamp موازٍ بنفس نقاط الانكسار). لكن بتخطيط
+     العمودين على سطح المكتب الدائرة تملأ ~90%+ من عرض عمودها، فلا مكان
+     لحلقة خارجية على اليسار — لذا نقصّ الحجم بـmin() ليتّسع دوماً بلا
+     تجاوز حافة القصّ (متطلب "لا يخرج بأي عرض"). الحدّ (43.5vw - 224px)
+     مُعايَر تجريبياً على مدى العرضين ليبقى أكبر شارة يسرى داخل الحدود عند
+     1280-1533، ويصل الحجم الكامل 1.35× عند الشاشات العريضة (حيث الشبكة
+     المتمركزة تترك هوامش فارغة يتّسع فيها المدار). التخطيط المكدّس
+     (≤1100px، العمود بعرض كامل) يستعيد الحجم الكامل أدناه بلا قصّ. */
+  --orbit-size: min(clamp(297px, 40.5vw, 621px), calc(43.5vw - 224px));
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
   z-index: 0;
-  overflow: hidden;
+  width: var(--orbit-size);
+  height: var(--orbit-size);
+  border: 1.5px dashed rgba(211, 160, 253, 0.4);
   border-radius: 50%;
   pointer-events: none;
-}
-.hero-particle {
-  position: absolute;
-  bottom: 0;
-  background: #fff;
-  border-radius: 50%;
-  opacity: 0;
-  will-change: transform, opacity;
+  transform: translate(-50%, -50%);
 }
 @media (prefers-reduced-motion: no-preference) {
-  /* حماية مزدوجة عمداً: app.js لا يولّد أي عنصر جسيم أصلاً لمستخدمي
-     تقليل الحركة (صفر عبء JS)، وهذا الاستعلام حماية إضافية على مستوى
-     CSS لو أُضيف جسيم لأي سبب — نفس نمط الحماية المزدوجة المُستخدم
-     بحركات الهيرو الأخرى بهذا الملف. */
-  .hero-particle { animation: particleDrift var(--duration, 8s) ease-in-out var(--delay, 0s) infinite; }
+  .hero-orbit { animation: orbitSpin 80s linear infinite; }
 }
-/* المسافة الرأسية (--drift-distance) تُحسب فعلياً بالبكسل عبر JS من
-   ارتفاع الحاوية الفعلي وقت التوليد — % داخل translateY() يُحسب على
-   ارتفاع العنصر نفسه لا حاويته (مصيدة CSS معروفة)، فلا تصلح هنا لجسيم
-   بحجم 2-4px فقط. اللون النهائي/التلاشي (--peak-opacity) يُمرَّر أيضاً
-   من JS لكل جسيم على حدة عبر custom property على نفس العنصر. */
-@keyframes particleDrift {
-  0% { transform: translateY(var(--drift-distance, 300px)); opacity: 0; }
-  15% { opacity: var(--peak-opacity, 0.6); }
-  85% { opacity: var(--peak-opacity, 0.6); }
-  100% { transform: translateY(calc(var(--drift-distance, 300px) * -0.1)); opacity: 0; }
+/* التمركز (translate -50%,-50%) مدموج بكل إطار عمداً — الدوران حول مركز
+   المدار نفسه (= مركز الدائرة)، بلا فقدان التمركز أثناء الدوران. */
+@keyframes orbitSpin {
+  from { transform: translate(-50%, -50%) rotate(0); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
+
+/* كل شارة: نقطة ثابتة على محيط المدار عبر تحويل ثابت لكل زاوية
+   (rotate θ ثم translate للخارج ثم rotate -θ ليعود إطار الشارة معتدلاً
+   ضمن إطار المدار غير الدوّار). الزاوية --a تُمرَّر لكل شارة عبر style. */
+.orbit-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--badge-size, clamp(34px, 4.2vw, 56px));
+  height: var(--badge-size, clamp(34px, 4.2vw, 56px));
+  margin: calc(var(--badge-size, clamp(34px, 4.2vw, 56px)) / -2) 0 0
+          calc(var(--badge-size, clamp(34px, 4.2vw, 56px)) / -2);
+  transform: rotate(var(--a)) translateY(calc(var(--orbit-size, 460px) / -2)) rotate(calc(-1 * var(--a)));
+}
+/* الغلاف الداخلي يعكس دوران المدار تماماً (-360 بنفس المدة 80s) فتبقى
+   الأيقونة معتدلة دوماً بالإطار العالمي أثناء الدوران — دوران معاكس موحّد
+   لكل الشارات (الميلان الأولي لكل زاوية عولج بـrotate -θ الثابت أعلاه). */
+.orbit-badge-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .orbit-badge-inner { animation: badgeCounterSpin 80s linear infinite; }
+}
+@keyframes badgeCounterSpin {
+  from { transform: rotate(0); }
+  to { transform: rotate(-360deg); }
+}
+.orbit-badge-inner svg { width: 46%; height: 46%; }
+
+/* نقاط/علامات + زخرفية ثابتة (لا تدور) قرب خط المدار، خافتة جداً. */
+.orbit-decor { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.orbit-decor span {
+  position: absolute;
+  color: var(--primary);
+  opacity: 0.35;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+.orbit-decor .d1 { top: 8%; left: 62%; }
+.orbit-decor .d2 { top: 30%; left: 6%; }
+.orbit-decor .d3 { top: 76%; left: 14%; }
+.orbit-decor .d4 { top: 88%; left: 70%; }
+.orbit-decor .d5 { top: 18%; left: 88%; font-size: 0.55rem; }
 
 .upload-illustration {
   position: absolute;
@@ -957,6 +1007,11 @@ h1, .display, .brand-name, .step-num, .count {
    بصرياً بلا حاجة لتغيير ترتيب HTML الدلالي)، بحجم معتدل ومركزي، بلا أي
    قصّ في أي نقطة توقف. */
 @media (max-width: 1100px) {
+  /* بالتخطيط المكدّس قد يتجاوز المحتوى ارتفاع .upload-state؛ توسيطه
+     الرأسي (align-items:center) كان يدفع أعلاه (حيث المدار) فوق حافة
+     الحاوية فيُقصّ. المحاذاة للأعلى تجعله يتدفق للأسفل ويُمرَّر بدل
+     القصّ العلوي (علة حقيقية عند 1024: visual_top=-45). */
+  .upload-state { align-items: flex-start; }
   .upload-hero-grid { flex-direction: column-reverse; gap: 2rem; }
   .upload-hero-text,
   .upload-hero-visual { flex: 0 0 auto; max-width: 100%; width: 100%; }
@@ -966,6 +1021,21 @@ h1, .display, .brand-name, .step-num, .count {
      (margin:auto لا justify-content هنا لأن .upload-hero-visual صار
      بعرض 100% بعد التكديس). */
   .upload-hero-circle { width: clamp(200px, 40vw, 300px); margin: 0 auto; }
+  /* التخطيط المكدّس: العمود بعرض كامل، فمكان وافر للحلقة الخارجية كاملة —
+     نلغي قصّ العمودين (min() أعلاه غير مناسب هنا) ونستعيد 1.35× حجم دائرة
+     الجوال الأصغر clamp(200,40vw,300) = clamp(270,54vw,405). */
+  .hero-orbit { --orbit-size: clamp(270px, 54vw, 405px); }
+  /* الدائرة تقع أعلى المحتوى المكدّس، والمدار يتجاوزها لأعلى/أسفل — نضيف
+     حشواً رأسياً للعمود يساوي مقدار التجاوز ((المدار-الدائرة)/2 + نصف قطر
+     الشارة + هامش) فيبقى المدار داخل صندوق .upload-state (وإلا قُصّ من
+     الأعلى، تجاوز حقيقي اكتُشف بقياس y=-35 عند 1024). يتحجّم تلقائياً مع
+     الأحجام. */
+  .upload-hero-visual {
+    padding-block: calc(
+      (clamp(270px, 54vw, 405px) - clamp(200px, 40vw, 300px)) / 2
+      + clamp(34px, 4.2vw, 56px) / 2 + 8px
+    );
+  }
   .dropzone { max-width: 480px; margin: 0 auto; }
 }
 

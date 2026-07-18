@@ -24,45 +24,6 @@ let activeService = null;
 let serviceResultCache = {}; // { [service]: lastApiResponseData }
 
 // ------------------------------------------------------------------
-// جسيمات زخرفية خفيفة داخل دائرة رسم الهيرو ("pixel snow" خافتة جداً) —
-// CSS transform/opacity فقط لكل جسيم (GPU)، لا تحديث JS مستمر بعد
-// التوليد، صفر عبء أداء إضافي أثناء التشغيل. تُتخطّى بالكامل (لا توليد
-// عناصر إطلاقاً) لمستخدمي prefers-reduced-motion — لا فقط تعطيل الحركة
-// بصرياً، بل صفر عمل JS من الأساس.
-// ------------------------------------------------------------------
-function initHeroParticles() {
-  const container = document.getElementById("heroParticles");
-  if (!container) return;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-  const height = container.getBoundingClientRect().height || 300;
-  const count = 15 + Math.floor(Math.random() * 11); // 15-25
-  const frag = document.createDocumentFragment();
-
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement("div");
-    p.className = "hero-particle";
-    const size = (2 + Math.random() * 2).toFixed(2); // 2-4px
-    const duration = (6 + Math.random() * 6).toFixed(2); // 6-12s
-    // تأخير سالب عشوائي (لا موجب) — يضع كل جسيم فوراً بنقطة عشوائية من
-    // دورته عند التحميل، فتبدو الدائرة "ممتلئة" بالجسيمات من أول لحظة
-    // بدل انتظار عدة ثوانٍ حتى تبدأ بالظهور تباعاً.
-    const delay = -(Math.random() * duration).toFixed(2);
-    const peakOpacity = (0.4 + Math.random() * 0.4).toFixed(2); // 0.4-0.8
-    p.style.left = `${(Math.random() * 100).toFixed(1)}%`;
-    p.style.width = `${size}px`;
-    p.style.height = `${size}px`;
-    p.style.setProperty("--drift-distance", `${height}px`);
-    p.style.setProperty("--peak-opacity", peakOpacity);
-    p.style.setProperty("--duration", `${duration}s`);
-    p.style.setProperty("--delay", `${delay}s`);
-    frag.appendChild(p);
-  }
-  container.appendChild(frag);
-}
-initHeroParticles();
-
-// ------------------------------------------------------------------
 // أيقونات SVG بسيطة inline بستايل خط واحد موحّد — بلا إيموجي إطلاقاً
 // ------------------------------------------------------------------
 function icon(name, color = "#D3A0FD", size = 20) {
