@@ -328,15 +328,21 @@ h1, .display, .brand-name, .step-num, .count {
 }
 @media (prefers-reduced-motion: no-preference) {
   /* animation-delay:800ms — يبدأ الطفو فقط بعد اكتمال دخول .upload-hero-
-     visual (تأخير 300ms + مدة 500ms = 800ms)، لا يتزامنان. الحركة نفسها
-     (illustration-float) بلا أي تعديل على تعريفها — فقط توقيت بدايتها. */
+     visual (تأخير 300ms + مدة 500ms = 800ms)، لا يتزامنان. حركة واحدة
+     فقط (illustration-float) — التوقيت والمدة بلا أي تعديل. */
   .upload-illustration { animation: illustration-float 4s ease-in-out 800ms infinite; }
 }
-/* التمركز (translate -50%,-50%) مدموج بكل إطار حركة عمداً — لا يمكن ترك
-   الحركة تستبدل transform كاملاً وإلا فقدت التمركز عند كل دورة طفو. */
+/* التمركز (translate -50%,-50%) + إزاحة الطفو (translateY) + "تنفّس"
+   دقيق بالحجم (scale) — كلها مدموجة بكل إطار حركة عمداً بنفس القيمة
+   بكل خطوة: CSS يسمح بقيمة transform واحدة فقط لكل لحظة، فلا يمكن تشغيل
+   حركتين منفصلتين على نفس الخاصية بتزامن دون أن تُلغي إحداهما الأخرى
+   (نفس النمط المُستخدم أصلاً لدمج التمركز مع الطفو، مُوسَّع هنا ليشمل
+   scale أيضاً). التوقيت (4s ease-in-out) وشكل الخطوات (0%/50%/100%)
+   متطابقان أصلاً بين الطفو والتنفّس المطلوب، فدُمجا بسلاسة بلا الحاجة
+   لحركة second منفصلة. */
 @keyframes illustration-float {
-  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-  50% { transform: translate(-50%, -50%) translateY(-10px); }
+  0%, 100% { transform: translate(-50%, -50%) translateY(0) scale(1); }
+  50% { transform: translate(-50%, -50%) translateY(-10px) scale(1.025); }
 }
 /* دخول تدريجي متعاقب لعناصر الهيرو النصية عند تحميل الصفحة — opacity+
    transform فقط (خصائص compositor بحتة) عمداً، لا تُحرِّك أي خاصية تخطيط
