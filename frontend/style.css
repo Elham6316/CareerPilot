@@ -317,6 +317,46 @@ h1, .display, .brand-name, .step-num, .count {
   to { transform: translate(8px, 10px); }
 }
 
+/* طبقة جسيمات زخرفية خفيفة جداً بين خلفية الدائرة (أسفل) والرسم (أعلى) —
+   حاوية مقصوصة تماماً بحدود الدائرة (overflow:hidden + border-radius:50%
+   مطابقان لها) فلا تفلت أي نقطة خارجها مهما بلغ انجرافها الرأسي. عنصر
+   ابن لـ.upload-hero-circle عمداً — يتحرك معها تلقائياً بانجرافها الخفيف
+   القائم (heroCircleDrift) بلا أي كود إضافي. */
+.hero-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hero-particle {
+  position: absolute;
+  bottom: 0;
+  background: #fff;
+  border-radius: 50%;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* حماية مزدوجة عمداً: app.js لا يولّد أي عنصر جسيم أصلاً لمستخدمي
+     تقليل الحركة (صفر عبء JS)، وهذا الاستعلام حماية إضافية على مستوى
+     CSS لو أُضيف جسيم لأي سبب — نفس نمط الحماية المزدوجة المُستخدم
+     بحركات الهيرو الأخرى بهذا الملف. */
+  .hero-particle { animation: particleDrift var(--duration, 8s) ease-in-out var(--delay, 0s) infinite; }
+}
+/* المسافة الرأسية (--drift-distance) تُحسب فعلياً بالبكسل عبر JS من
+   ارتفاع الحاوية الفعلي وقت التوليد — % داخل translateY() يُحسب على
+   ارتفاع العنصر نفسه لا حاويته (مصيدة CSS معروفة)، فلا تصلح هنا لجسيم
+   بحجم 2-4px فقط. اللون النهائي/التلاشي (--peak-opacity) يُمرَّر أيضاً
+   من JS لكل جسيم على حدة عبر custom property على نفس العنصر. */
+@keyframes particleDrift {
+  0% { transform: translateY(var(--drift-distance, 300px)); opacity: 0; }
+  15% { opacity: var(--peak-opacity, 0.6); }
+  85% { opacity: var(--peak-opacity, 0.6); }
+  100% { transform: translateY(calc(var(--drift-distance, 300px) * -0.1)); opacity: 0; }
+}
+
 .upload-illustration {
   position: absolute;
   z-index: 1;
