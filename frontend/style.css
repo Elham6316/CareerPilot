@@ -419,6 +419,13 @@ h1, .display, .brand-name, .step-num, .count {
   padding: 2.4rem 1.75rem 1.75rem;
   cursor: pointer;
   position: relative;
+  /* الحافة اليمنى تلاصق حدّ .upload-state (overflow-x:hidden) تماماً بلا
+     أي هامش (0px فرق فعلياً عند القياس) — تكبير scale() من المركز
+     الافتراضي يدفعها خارج حد القصّ فيُقصّ الحد المتقطع هناك تحديداً (علة
+     حقيقية مؤكَّدة بالقياس: 8.7px تجاوز فعلي عند hover). تثبيت نقطة
+     الأصل عند الحافة اليمنى نفسها يجعل التكبير كله جهة اليسار (فراغ
+     كافٍ هناك) فلا تلمس الحافة اليمنى حد القصّ إطلاقاً. */
+  transform-origin: right center;
   transition: border-color 200ms ease, background 200ms ease, transform 150ms ease;
 }
 /* تكبير خفيف عند المرور، وانضغاط بسيط عند الضغط — تغذية راجعة لمسية على
