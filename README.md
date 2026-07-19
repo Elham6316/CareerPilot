@@ -1,145 +1,96 @@
 # CareerPilot
 
-وكيل ذكاء اصطناعي واحد يساعدك في رحلة البحث عن وظيفة بالكامل — من تحليل
-سيرتك الذاتية إلى كتابة خطاب التقديم — عبر محادثة طبيعية بالعربي أو
-الإنجليزي، ويقرر بنفسه أي أداة يحتاج ومتى يستخدمها.
+*An AI agent that searches, evaluates, and writes on your behalf — always with your approval.*
 
-## المشكلة والحل
+**[🟢 Live Demo](https://careerpilot-2hwg.onrender.com/)** &nbsp;·&nbsp; **📦 Tech: Python · FastAPI · Gemini API**
 
-البحث عن وظيفة عملية مبعثرة ومرهقة: تبحث في مواقع متعددة، تقيّم يدوياً
-هل الوظيفة تناسب سيرتك، تكتب خطاب تقديم من الصفر لكل وظيفة، وتفقد تتبع
-أي وظيفة قدّمت عليها ومتى.
+Job searching is fragmented and manual — you juggle multiple sites, guess whether a job is actually a good fit, write every cover letter from scratch, and lose track of what you already applied to. CareerPilot is a single AI agent that understands a natural-language request and decides, on its own, which of 7 tools to call and in what order — never taking a final action (logging an application, finalizing a resume edit) without your explicit approval.
 
-CareerPilot يحل هذا بوكيل ذكاء اصطناعي واحد (Gemini + function calling)
-يفهم طلبك الحر بدون صيغ أوامر ثابتة، ويقرر بنفسه — عبر حلقة استدعاء أدوات
-متتالية — أي من الأدوات السبع يحتاج: من اقتراح مسميات وظيفية بناءً على
-سيرتك، مروراً بالبحث الفعلي والتقييم الدلالي، وصولاً لكتابة خطاب تقديم
-مخصص وتتبع تقديماتك. أي إجراء نهائي (تسجيل تقديم، اعتماد تعديل السيرة)
-ينتظر دائماً موافقتك الصريحة أولاً — راجع [PROJECT_BRIEF.md](PROJECT_BRIEF.md)
-للخطة الكاملة.
+## Overview
 
-## الأدوات السبع
+CareerPilot is built as a real agent, not a fixed pipeline: a ReAct loop (Reason → Act → Observe → repeat) keeps the conversation with Gemini open across multiple tool calls until the model itself decides it has a final answer for the user. The backend is a thin FastAPI layer (`api.py`) that does nothing but expose that loop over HTTP and serve a custom HTML/CSS/JS frontend — no framework, no build step. It's deployed live on [Render](https://careerpilot-2hwg.onrender.com/).
 
-| الأداة | الوصف |
-|---|---|
-| `suggest_job_titles` | يحلل نص السيرة الذاتية ويقترح 3-5 مسميات وظيفية مناسبة، ويترك لك اختيار أحدها أو كتابة مسمى آخر |
-| `search_jobs` | يبحث عن وظائف حقيقية عبر Jooble API بناءً على مسمى وموقع |
-| `evaluate_match` | يقيّم مدى توافق وظيفة معينة مع سيرتك الذاتية بتحليل دلالي حقيقي (لا مطابقة كلمات)، مع درجة وسبب |
-| `suggest_resume_edits` | يقترح صياغة جديدة لقسم من سيرتك (الـ Summary مثلاً) تناسب وظيفة محددة، كنص للعرض فقط — لا يُعدَّل أي ملف تلقائياً |
-| `draft_cover_letter` | يكتب خطاب تقديم مخصص مبني على سيرتك الحقيقية ووصف الوظيفة |
-| `log_application` | يسجل تقديماً على وظيفة في سجل محلي — بعد تأكيدك الصريح فقط |
-| `get_application_status` | يرجع ملخصاً عن تقديماتك المسجّلة، مع إمكانية الفلترة حسب الحالة |
+## The Problem
 
-## التشغيل من الصفر
+- Searching for relevant openings means checking several job boards manually, over and over.
+- There's no quick way to tell how well a specific job actually matches your background before applying.
+- Every cover letter gets written from scratch, even for similar roles.
+- Applications pile up with no record of what was sent where, or its status.
 
-### 1. استنساخ المستودع
-```bash
-git clone <رابط-المستودع>
-cd CareerPilot
-```
-
-### 2. إنشاء بيئة افتراضية (venv)
-```bash
-python -m venv venv
-# ويندوز:
-venv\Scripts\activate
-# ماك/لينكس:
-source venv/bin/activate
-```
-
-### 3. تثبيت المتطلبات
-```bash
-pip install -r requirements.txt
-```
-
-### 4. إعداد ملف `.env`
-انسخ `.env.example` إلى `.env` وعبّي القيم الخاصة فيك:
+## How It Works
 
 ```
-GEMINI_API_KEY=
-JOOBLE_API_KEY=
+User Request → Analyze Intent → Select Tool → Execute → Show Result
+                                     ↑                       │
+                                     └───────────────────────┘
 ```
 
-- `GEMINI_API_KEY`: مفتاح من [Google AI Studio](https://aistudio.google.com/).
-- `JOOBLE_API_KEY`: مفتاح مجاني من [Jooble API](https://jooble.org/api/about).
+The loop back to **Select Tool** is what makes this an agent rather than a fixed pipeline: a single request like *"find me a Python job in Riyadh and write a cover letter for the first one"* can walk through several tools in sequence — the model decides when it actually has a final answer, not a hardcoded step count.
 
-لا تشارك هذا الملف أو تكتب المفتاح مباشرة في أي كود — `.env` مستثنى من git
-أصلاً.
+## Tools
 
-### 5. التشغيل
-```bash
-python agent.py
-```
-سيسألك البرنامج عن مسار PDF لسيرتك الذاتية (اختياري)، ثم يمكنك المحادثة
-معه مباشرة.
+| Tool | What it does | Notes |
+|---|---|---|
+| `suggest_job_titles` | Analyzes the parsed resume and suggests 3–5 matching job titles | Used when a resume is uploaded without a stated target role |
+| `search_jobs` | Searches real listings via the Jooble API by title and location | Location is normalized to English "City, Country" automatically before the call |
+| `evaluate_match` | Scores how well a job description fits the resume, 0–100, with reasoning | Semantic comparison via Gemini, not keyword matching |
+| `improve_resume` | Rewrites the resume's Summary/Skills (and other sections as needed) to better target a job, ATS-friendly | Grounding rule: every claim must trace back to the original resume text — never fabricates experience |
+| `draft_cover_letter` | Writes a tailored cover letter for a specific job and company | Same grounding rule as `improve_resume`; returned as a draft for review |
+| `log_application` | Records an application (company, title, status) to a local store | Only called after explicit user confirmation |
+| `get_application_status` | Returns a summary of logged applications, optionally filtered by status | |
 
-## مثال حوار فعلي كامل
+## Tech Stack
 
-هذا حوار حقيقي تم اختباره فعلياً (موثّق بالكامل في
-[TESTING.md](TESTING.md)) باستخدام السيرة التجريبية `data/demo_resume.pdf`
-(بيانات وهمية باسم "Sara Al-Otaibi"):
+- Python
+- FastAPI
+- Gemini API (`google-genai`)
+- Jooble API
+- pypdf (resume text extraction)
+- Vanilla HTML/CSS/JS frontend (no framework, no build step)
+- Deployed on Render
 
-> **أنتِ** (بعد رفع PDF السيرة): أبي وظيفة تناسب سيرتي في الرياض
->
-> **CareerPilot**: أهلاً سارة، سيرتك الذاتية قوية جداً. بناءً على خبراتك
-> في Python، AWS، وتطوير الـ Backend، هذه أنسب المسميات الوظيفية لك في
-> الرياض:
-> 1. **Backend Developer**
-> 2. **Software Engineer**
-> 3. **Python Developer**
-> 4. **Cloud Engineer**
->
-> أي مسمى منها تفضلين أن أبدأ البحث عنه؟ أو إذا كان لديك مسمى آخر محدد في
-> بالك، أخبريني لأبحث لك فوراً.
->
-> **أنتِ**: اختار Backend Developer
->
-> **CareerPilot**: وجدت لكِ بعض الفرص الوظيفية لمسمى "Backend Developer"
-> في الرياض. يرجى ملاحظة أنني أجمع هذه النتائج من عدة مصادر عبر Jooble،
-> لذا **يُرجى التحقق من شرعية ومصداقية الشركة قبل التقديم الفعلي أو
-> مشاركة أي بيانات شخصية.**
->
-> إليكِ النتائج المتاحة:
-> 1. **Staff Backend Engineer (NodeJS/Go)** في شركة **Yassir**
-> 2. **Senior iOS Developer(Swift)** في شركة **Ninja**
-> 3. **Java Developer+Springboot - KSA** في شركة **Devsinc**
-> 4. **Pre-sales Solutions Engineer** في شركة **CEQUENS**
-> 5. **Application Engineer** في شركة **Litmus Automation**
->
-> هل ترغبين في أن نختار إحدى هذه الوظائف لتقييم مدى توافقها مع سيرتك
-> الذاتية، أو كتابة خطاب تقديم (Cover Letter) مخصص لها؟
->
-> **أنتِ**: قيّم لي الوظيفة الأولى، شو رأيك تناسبني؟
->
-> **CareerPilot**: الوظيفة التي اخترتها (Staff Backend Engineer في
-> Yassir) لا تبدو متوافقة بشكل كبير مع ملفك الحالي حالياً، وإليكِ السبب:
->
-> - **مستوى الخبرة:** الوظيفة بمستوى "Staff Engineer" وهذا يتطلب عادةً
->   خبرة 8 سنوات فأكثر مع تركيز كبير على الإدارة الاستراتيجية للفرق
->   والأنظمة، بينما تملكين 4 سنوات من الخبرة المتميزة.
-> - **اختلاف التقنيات:** الوظيفة تتطلب خبرة بـ NodeJS أو Go، بينما تعتمد
->   مهاراتك الأساسية على Python و Django/FastAPI.
->
-> **نصيحتي:** قد يكون من الأفضل التركيز على وظائف "Senior Backend
-> Developer" التي تستخدم Python، فهذا سيمنحك فرصة قبول أعلى بكثير.
->
-> هل تودين أن أبحث لكِ عن وظائف مطابقة أكثر لـ Python Backend Developer
-> في الرياض؟ أو هل ترغبين في تعديل سيرتك الذاتية لاستهداف وظيفة معينة؟
+## Getting Started
 
-لاحظي أن كل خطوة (اقتراح مسميات → بحث → تقييم) قررها النموذج نفسه من
-سياق المحادثة، دون أي تدخل يدوي بيني الرسائل.
+1. Clone the repo:
+   ```bash
+   git clone <repository-url>
+   cd CareerPilot
+   ```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   # Windows:
+   venv\Scripts\activate
+   # macOS/Linux:
+   source venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Copy `.env.example` to `.env` and add your keys:
+   ```
+   GEMINI_API_KEY=
+   JOOBLE_API_KEY=
+   ```
+5. Run the server:
+   ```bash
+   uvicorn api:app --reload
+   ```
+6. Open [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-## القيود المعروفة
+## Known Limitations
 
-- **صيغة الموقع لـ Jooble**: Jooble API لا يرجع نتائج صحيحة إلا مع صيغة
-  إنجليزية كاملة "المدينة، الدولة" (مثال: `Riyadh, Saudi Arabia`) — الاسم
-  العربي أو المدينة وحدها بدون الدولة يرجعان صفر نتائج. تم إصلاح هذا عبر
-  تعليمة في `SYSTEM_INSTRUCTION` تجعل النموذج يحوّل الموقع تلقائياً قبل
-  الاستدعاء، لكنه يبقى قيداً حقيقياً في Jooble نفسه، لا في هذا المشروع.
-- **مراجعة بشرية إلزامية لـ `suggest_resume_edits` و `draft_cover_letter`**:
-  رغم وجود قاعدة "grounding" صريحة في الـ prompt تمنع النموذج من اختلاق
-  أي خبرة غير موجودة في السيرة الأصلية، اكتُشف اختلاق فعلي واحد أثناء
-  الاختبار قبل هذا الإصلاح (راجع `TESTING.md`). لا تعتمدي أي اقتراح تعديل
-  سيرة أو خطاب تقديم دون قراءته بعناية أولاً ومقارنته بسيرتك الحقيقية —
-  هذا سبب وجود التحذير الثابت "⚠️ راجع هذا الاقتراح بعناية قبل استخدامه
-  فعلياً" في كل رد من `suggest_resume_edits`.
+- Jooble only returns accurate results for an English "City, Country" location format (e.g. `Riyadh, Saudi Arabia`) — the model handles this conversion automatically before calling the API, but it's a real constraint of the upstream service.
+- Match scores from `evaluate_match` are LLM-generated and therefore non-deterministic — the same job/resume pair can score slightly differently across runs.
+- Each session allows one resume upload and a capped number of messages, by design — this is a demo deployment, not a persistent multi-resume workspace.
+
+## Roadmap
+
+- Daily automated job search delivered via email
+- LinkedIn integration
+- Skill-gap analysis against target roles
+
+## License
+
+Not currently licensed — a `LICENSE` file will be added here once one is chosen.
