@@ -301,20 +301,48 @@ h1, .display, .brand-name, .step-num, .count {
    واحدة بأي عرض شاشة، بدل عنصرين منفصلين بوحدات قياس مختلفة (كانت
    .bg-blob px ثابتة بموضع % من .app-shell، والرسم % من عمود flex مختلف
    تماماً — ينحرفان عن بعض حتماً بأي عرض غير الذي عُوير عليه يدوياً). */
-.upload-hero-circle {
-  position: relative;
-  /* ترتيب تكديس صريح على 3 مستويات (بعد علة حقيقية: الشارات كانت تختفي
-     خلف الرسم التوضيحي في بعض المواضع رغم كون .partner-area شقيقة أعلى
-     من الدائرة، لأن z-index:0 القديم لم يكن كافياً مقارنةً بـz-index:1
-     للرسم نفسه في بعض المتصفحات/الترتيب الفعلي). الخلفية (الدائرة)=1 <
-     الرسم=3 < .partner-area/الشارات=10 — يضمن ظهور الشارات فوق الرسم
-     دائماً بلا شرط الموضع. */
-  z-index: 1;
-  width: clamp(220px, 30vw, 460px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, var(--secondary), var(--purple-light) 72%);
-  opacity: 0.7;
+/* HERO GLOW */
+.upload-hero-circle::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:-18%;
+
+    border-radius:50%;
+
+    background:
+
+        radial-gradient(
+
+            circle,
+
+            rgba(211,160,253,.30),
+
+            rgba(211,160,253,.12) 45%,
+
+            transparent 75%
+
+        );
+
+    filter:blur(45px);
+
+    z-index:-1;
+
+}
+
+.upload-hero-circle{
+    position:relative;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    width:470px;
+    aspect-ratio:1;
+
+    border-radius:50%;
 }
 /* انجراف خفيف مستمر للدائرة العضوية خلف الرسم — عنصر منفصل عن الرسم نفسه
    (transform مستقل تماماً، لا تصادم مع تمركز/طفو الرسم أدناه)، وعن
@@ -342,132 +370,156 @@ h1, .display, .brand-name, .step-num, .count {
    hidden}` (تحقّق منه لكل شارة بالقياس أدناه)، لا صندوق العمود الضيّق.
    z-index:10 (بعد إصلاح علّة التكديس) يضمن ظهورها فوق الرسم (z-index:3)
    والدائرة (z-index:1) دائماً بلا أي شرط تراكب موضعي. */
-.partner-area {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  /* قُلِّص من 140% إلى 122% (وسطياً مع تضييق نطاق "بعيد" السابق) — علة
-     حقيقية اكتُشفت بالقياس: مع 140% كانت شارة icon-resume (6.8% من حافة
-     .partner-area) تقع فعلياً خارج عمود الرسم وتتراكب مع عمود النص عند
-     1280-1920px رغم كونها "5-32% من الحافة" اسمياً، لأن 140% تُبعِّد
-     الحافة نفسها كثيراً عن حدود .upload-hero-visual الفعلية. */
-  width: 122%;
-  height: 122%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  pointer-events: none;
-}
-@media (max-width: 1100px) {
-  /* بالتخطيط المكدّس .upload-hero-visual بعرض كامل بالفعل — تكبير أقل
-     (104% بدل 122%) يكفي وحده لتفادي تجاوز حدود `.upload-state`، بنفس
-     تقنية التمركز (علة تجاوز حقيقية اكتُشفت بالقياس عند 375-428px). */
-  .partner-area { width: 104%; height: 104%; }
+
+/*---------------------------------------------*/
+.partner-area{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:10;
+  pointer-events:none;
 }
 
-/* يسجّل --hover-scale كخاصية مُتحرَّكة (رقم صرف قابل للانتقال السلس عبر
-   transition)، لا مجرد متغيّر CSS عادي غير قابل للانتقال. */
-@property --hover-scale {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 1;
-}
-.partner-logo {
-  position: absolute;
-  width: var(--badge, clamp(30px, 3.4vw, 40px));
-  height: var(--badge, clamp(30px, 3.4vw, 40px));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(211, 160, 253, 0.15);
-  /*backdrop-filter: blur(12px); */
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 10px 30px rgba(211, 160, 253, 0.12), 0 2px 8px rgba(0, 0, 0, 0.03);
-  /* .partner-area والدها لديها pointer-events:none (لتترك الماوس يمر عبر
-     الفراغ الشفاف بينها)، وهي خاصية موروثة — بلا هذا السطر لا تصل أحداث
-     :hover للشارة إطلاقاً مهما كانت صحيحة قواعد CSS الأخرى (علة حقيقية
-     اكتُشفت بالقياس: --hover-scale بقيت 1 دائماً رغم محاكاة hover فعلية). */
-  pointer-events: auto;
-  --hover-scale: 1;
-  /* علة مُكتشَفة سابقاً في هذا المشروع (.dropzone:hover): أي transform
-     ثابت على :hover لعنصر لديه animation مستمر (infinite) يستهدف نفس
-     الخاصية يُحجَب تماماً — قيمة الـkeyframe الحالية تطغى دوماً على
-     قاعدة :hover العادية. لذا لا تُستخدم `transform: scale()` مباشرة
-     هنا؛ بدلاً منها ينتقل --hover-scale نفسه (خاصية مسجَّلة أعلاه)، وتُقرأ
-     قيمته داخل transform الأساسي (خارج الحركة) وداخل كل خطوة من
-     partnerFloat أدناه — فيعمل التكبير سواء كانت الحركة نشطة أو متوقفة،
-     بلا حاجة لعنصر wrapper إضافي يغيّر بنية الـDOM. */
-  transform: scale(var(--hover-scale));
-  transition: --hover-scale 150ms ease;
-}
-.partner-logo:hover { --hover-scale: 1.05; }
-.partner-logo svg { width: 46%; height: 46%; opacity: 0.95; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .partner-logo { animation: partnerFloat 8s ease-in-out infinite; }
-  /* مدد/تأخيرات مختلفة لكل شارة عبر nth-child — طفو عضوي غير متزامن بدل
-     تحرّك الكل معاً بنفس اللحظة. */
-  .partner-logo:nth-child(1) { animation-duration: 8.5s; animation-delay: -0.4s; }
-  .partner-logo:nth-child(2) { animation-duration: 7.5s; animation-delay: -2.1s; }
-  .partner-logo:nth-child(3) { animation-duration: 9.5s; animation-delay: -1.2s; }
-  .partner-logo:nth-child(4) { animation-duration: 8s;   animation-delay: -3.4s; }
-  .partner-logo:nth-child(5) { animation-duration: 10s;  animation-delay: -0.9s; }
-  .partner-logo:nth-child(6) { animation-duration: 7s;   animation-delay: -2.7s; }
-}
-@keyframes partnerFloat {
-  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(var(--hover-scale)); }
-  25% { transform: translate(-4px, -6px) rotate(-2deg) scale(var(--hover-scale)); }
-  50% { transform: translate(3px, -11px) rotate(2deg) scale(var(--hover-scale)); }
-  75% { transform: translate(-2px, -5px) rotate(-1deg) scale(var(--hover-scale)); }
+@media (max-width:1100px){
+  .partner-area{
+    width:104%;
+    height:104%;
+  }
 }
 
-/* "بعيد" السابق (1.7-2×نق) كان يبدو منفصلاً عائماً عشوائياً لا متعلقاً
-   بالتكوين — علة تصميم حقيقية أُبلغت من المستخدم بعد المراجعة البصرية،
-   لا علة قياس. استُبدلت فئات القرب/التوسط/البعد الثلاث بمدى واحد أضيق:
-   كل شارة تقع بين 5%-32% من أقرب حافتين لصندوق .partner-area نفسه (لا
-   عن مركز الدائرة كما سابقاً) — أي top/left إما ضمن [5%,32%] (قريبة من
-   الحافة العلوية/اليسرى) أو ضمن [68%,95%] (قريبة من السفلى/اليمنى).
-   يحافظ هذا على تباين حقيقي بين الشارات الست (لا حلقة موحدة) لكنه يسحب
-   كل القيم الطرفية للداخل بشكل ملموس فتقرأ بصرياً كتجمّع عضوي حول
-   الرسم لا تناثراً للزوايا البعيدة. القيم الفعلية المُقاسة بعد الرسم
-   (تحقق من عدم تجاوز `.upload-state{overflow-x:hidden}` أو عمود النص)
-   مطبوعة ومُوثَّقة بـTESTING.md. */
-.partner-logo.icon-search    { top: 10%; left: 24%; }
-.partner-logo.icon-submitted { top: 82%; left: 70%; }
-.partner-logo.icon-growth    { top: 74%; left: 16%; }
-.partner-logo.icon-star      { top: 10%; left: 78%; }
-.partner-logo.icon-chat      { top: 88%; left: 32%; }
-.partner-logo.icon-resume    { top: 20%; left: 86%; }
+@property --hover-scale{
+  syntax:'<number>';
+  inherits:false;
+  initial-value:1;
+}
 
-/* أشكال زخرفية دقيقة جداً */
-.dot, .square, .sparkle { position: absolute; opacity: 0.18; }
-@media (prefers-reduced-motion: no-preference) {
-  .dot, .square, .sparkle { animation: floatSlow 12s ease-in-out infinite; }
-  .square { animation-delay: -4s; }
-  .sparkle { animation-delay: -7s; }
+.partner-logo{
+  position:absolute;
+  /* مقاس متجاوب متصل (clamp) بدل قفزة واحدة ثابتة عند 768px — يقلّد نفس
+     أسلوب التحجيم المتصل المُستخدَم أصلاً لـ.upload-hero-circle (تدرّج
+     مستمر عبر عرض الشاشة، لا قفزة واحدة). الحد الأقصى 36px مطابق تماماً
+     للقيمة الثابتة السابقة، فالمظهر عند العرض المعتمد (~1920px) يبقى
+     كما هو بالضبط (36px، لأن 3.2vw عندها أكبر من السقف فيُقصّ عليه). */
+  width: clamp(26px, 3.2vw, 36px);
+  height: clamp(26px, 3.2vw, 36px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#fff;
+  border:1px solid rgba(211,160,253,.12);
+  box-shadow:0 6px 18px rgba(0,0,0,.05);
+  transition:transform .2s ease;
 }
-.dot { width: 5px; height: 5px; background: #D3A0FD; border-radius: 50%; }
-.square { width: 7px; height: 7px; border: 1px solid rgba(211, 160, 253, 0.35); }
-.sparkle { width: 12px; height: 12px; }
-.sparkle::before, .sparkle::after { content: ""; position: absolute; background: #D3A0FD; opacity: 0.35; }
-.sparkle::before { width: 2px; height: 12px; left: 5px; }
-.sparkle::after { width: 12px; height: 2px; top: 5px; }
-@keyframes floatSlow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+.partner-logo:hover{transform:scale(1.05);}
+.partner-logo svg{width:46%;height:46%;}
+
+@media(prefers-reduced-motion:no-preference){
+
+  .partner-logo{
+    animation:partnerFloat 8s ease-in-out infinite;
+  }
+
+  .partner-logo:nth-child(1){
+    animation-duration:8.5s;
+    animation-delay:-.5s;
+  }
+
+  .partner-logo:nth-child(2){
+    animation-duration:7.5s;
+    animation-delay:-2.2s;
+  }
+
+  .partner-logo:nth-child(3){
+    animation-duration:9s;
+    animation-delay:-1.3s;
+  }
+
+  .partner-logo:nth-child(4){
+    animation-duration:8.2s;
+    animation-delay:-3.2s;
+  }
+
+  .partner-logo:nth-child(5){
+    animation-duration:7.8s;
+    animation-delay:-2s;
+  }
+
 }
+
+@keyframes partnerFloat{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-6px);}
+}
+
+/*======================================
+=            ICON POSITIONS            =
+======================================*/
+.partner-logo{animation:partnerFloat 7s ease-in-out infinite;}
+.icon-search{top:16%;left:23%;}
+.icon-star{top:7%;left:49%;}
+.icon-resume{top:35%;left:83%;}
+.icon-submitted{top:68%;left:70%;}
+.icon-chat{top:82%;left:28%;}
+
+
+/*======================================
+=        DECORATIVE SHAPES             =
+======================================*/
+
+.dot,.square,.sparkle{
+ position:absolute;
+ border:1.5px solid #E7D7FF;
+ background:transparent;
+ box-shadow:none;
+ animation:partnerFloat 11s ease-in-out infinite;
+}
+/* نفس أسلوب clamp() المُستخدَم أعلاه لـ.partner-logo — سقف كل شكل مطابق
+   تماماً لقيمته الثابتة السابقة (8/14/14px)، فلا تغيير عند العرض المعتمد
+   (~1920px)، مع تصغير متصل حقيقي على الشاشات الضيقة بدل حجم ثابت واحد
+   كان لا يصغر إطلاقاً (لم يكن له أي media query سابقاً). */
+.dot{width:clamp(5px, 0.5vw, 8px);height:clamp(5px, 0.5vw, 8px);border-radius:50%;}
+.square{width:clamp(9px, 0.9vw, 14px);height:clamp(9px, 0.9vw, 14px);border-radius:3px;}
+.sparkle{width:clamp(9px, 0.9vw, 14px);height:clamp(9px, 0.9vw, 14px);border:none;}
+.sparkle:before,.sparkle:after{
+content:"";position:absolute;left:50%;top:50%;
+background:#E7D7FF;transform:translate(-50%,-50%);
+}
+/* خطا التقاطع كنسبة % من صندوق .sparkle نفسه (المتحجّم أعلاه) بدل px
+   ثابتة — يتقلّصان معه تلقائياً، لا يبقيان بنفس الطول القديم فوق شكل
+   أصغر. */
+.sparkle:before{width:70%;height:1.5px;}
+.sparkle:after{width:1.5px;height:70%;}
+.dot-1{top:18%;left:37%;}
+.square-1{top:22%;left:74%;}
+.sparkle-1{top:52%;left:79%;}
+.dot-2{top:76%;left:58%;}
+.square-2{top:84%;left:40%;}
+.sparkle-2{top:30%;left:16%;}
+
+@media(max-width:768px){
+ /* حجم .partner-logo لم يعد يُقفَز هنا بقيمة ثابتة — clamp() أعلاه يتكفّل
+    بتصغيره تصاعدياً بلا أي قفزة منفصلة عند هذه النقطة تحديداً. */
+ .upload-illustration{width:104%;}
+ .icon-search{left:16%;top:18%}
+ .icon-star{left:52%;top:8%}
+ .icon-resume{left:78%;top:36%}
+ .icon-submitted{left:64%;top:67%}
+ .icon-chat{left:22%;top:76%}
+}
+
+/*---------------------------------------------*/
 
 .upload-illustration {
-  position: absolute;
-  z-index: 3;
-  top: 50%;
-  left: 50%;
-  width: 70%;
-  height: auto;
-  transform: translate(-50%, -50%);
-}
+    position: relative;
+    width: 85%;
+    height: auto;
+    left: 38%;
+    top: 42%;
+    transform: none;
+    z-index: 5; 
+  }
 @media (prefers-reduced-motion: no-preference) {
   /* animation-delay:800ms — يبدأ الطفو فقط بعد اكتمال دخول .upload-hero-
      visual (تأخير 300ms + مدة 500ms = 800ms)، لا يتزامنان. حركة واحدة
@@ -1076,6 +1128,26 @@ h1, .display, .brand-name, .step-num, .count {
   /* تقليص نطاق .partner-area نفسه للتخطيط المكدّس مُعرَّف الآن بجانب
      القاعدة الأساسية أعلاه (110% بدل 140%) — لا حاجة لتكرار هنا. */
   .dropzone { max-width: 480px; margin: 0 auto; }
+}
+
+/* علة قياس حقيقية اكتُشفت (موجودة أصلاً حتى قبل أي تعديل يدوي — تحقّقت
+   بمقارنة مباشرة مع الإصدار المُلتزَم سابقاً 780526e، القيم مطابقة
+   حرفياً): بعرض ~1024px مع ارتفاع شاشة قصير نسبياً (لابتوبات 13-14 إنش
+   شائعة)، محتوى الهيرو المكدّس (رسم فوق نص) يتجاوز ارتفاع `.upload-state`
+   المتاح فيُفعِّل تمريرها الداخلي (`overflow-y:auto` الموجود أصلاً)، وهو
+   ما يظهر بصرياً كسهمي تمرير كلاسيكيين لصق الحافة اليسرى للنافذة (لأن
+   .workspace/.upload-state تشغلان الجزء الأيسر من الشاشة بتخطيط RTL) —
+   يبدو كأنه تمرير للصفحة كاملة رغم أن `html`/`body{overflow:hidden}` لم
+   يُمسّا إطلاقاً ولا يزالان يمنعان أي تمرير فعلي على مستوى الصفحة (تحقّق
+   بالقياس: `document.documentElement.scrollHeight` يساوي دوماً
+   `window.innerHeight` بلا استثناء). الإصلاح هنا **حاوٍ بحت** على مستوى
+   الحاويات الأب فقط (padding/gap/سقف حجم الدائرة الاستجابي الموجود أصلاً)
+   — لا لمس لموضع/حجم أي شارة أو عنصر زخرفي أو الرسم التوضيحي نفسه. */
+@media (max-width: 1100px) and (max-height: 820px) {
+  .workspace { padding: 14px; }
+  .upload-state { padding: 0.4rem 0; }
+  .upload-hero-grid { gap: 1.1rem; }
+  .upload-hero-circle { width: clamp(150px, 30vw, 205px); }
 }
 
 @media (max-width: 900px) {
