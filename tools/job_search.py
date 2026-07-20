@@ -9,7 +9,7 @@ import requests
 from google.genai import types
 
 from tools.gemini_client import MODEL_NAME, get_client
-from tools.jsearch_client import search_jsearch
+from tools.rapidapi_client import search_active_jobs_db, search_indeed_scraper
 
 JOOBLE_API_URL = "https://jooble.org/api/{key}"
 MAX_COMBINED_RESULTS = 10
@@ -53,8 +53,8 @@ def _clean_snippet(snippet: str) -> str:
 def _search_jooble(query: str, location: str | None) -> list[dict]:
     """يبحث عبر Jooble فقط، ويرجع قائمة بنفس الشكل الموحَّد (لا dict كامل
     بعد الآن) — أي فشل (مفتاح ناقص، شبكة، رد غير مقروء) يُرجع قائمة فارغة
-    مع تسجيل السبب بدل رفع استثناء، بنفس نمط jsearch_client.search_jsearch،
-    فلا يُسقِط مصدر واحد فاشل تدفق البحث الموحَّد كاملاً."""
+    مع تسجيل السبب بدل رفع استثناء، بنفس نمط rapidapi_client، فلا يُسقِط
+    مصدر واحد فاشل تدفق البحث الموحَّد كاملاً."""
     api_key = os.environ.get("JOOBLE_API_KEY")
     if not api_key:
         print("[job_search] JOOBLE_API_KEY غير موجود في .env — تخطي مصدر Jooble.")
@@ -89,43 +89,48 @@ def _search_jooble(query: str, location: str | None) -> list[dict]:
     ]
 
 
-def _dedupe_merge(jooble_jobs: list[dict], jsearch_jobs: list[dict], requested_city: str) -> list[dict]:
-    """يدمج القائمتين ويُزيل التكرار بمفتاح (العنوان، الشركة) بحروف صغيرة.
-    عند وجود نفس الوظيفة بالمصدرين: تُفضَّل نسخة JSearch لو موقعها الفعلي
-    يحوي اسم المدينة المطلوبة حرفياً (أدق جغرافياً من تصنيف Jooble القُطري
-    أحياناً كما وُثِّق سابقاً)، وإلا تبقى أول نسخة ظهرت (Jooble، لأنها
-    المصدر الأول بترتيب الدمج أدناه)."""
+def _dedupe_merge(job_lists: list[list[dict]], requested_city: str) -> list[dict]:
+    """يدمج عدة قوائم (بترتيب أولوية: Jooble ثم Indeed Scraper ثم Active
+    Jobs DB) ويُزيل التكرار بمفتاح (العنوان، الشركة) بحروف صغيرة. عند
+    وجود نفس الوظيفة بأكثر من مصدر: تُفضَّل أي نسخة موقعها الفعلي يحوي
+    اسم المدينة المطلوبة حرفياً (أدق جغرافياً — لا يهم أي مصدر بالتحديد،
+    المعيار هو التطابق الفعلي لا اسم المصدر)، وإلا تبقى أول نسخة ظهرت
+    حسب ترتيب job_lists."""
     merged: dict[tuple[str, str], dict] = {}
     order: list[tuple[str, str]] = []
 
-    for job in [*jooble_jobs, *jsearch_jobs]:
-        key = (job["title"].strip().lower(), job["company"].strip().lower())
-        if key not in merged:
-            merged[key] = job
-            order.append(key)
-            continue
+    for jobs in job_lists:
+        for job in jobs:
+            key = (job["title"].strip().lower(), job["company"].strip().lower())
+            if key not in merged:
+                merged[key] = job
+                order.append(key)
+                continue
 
-        existing = merged[key]
-        is_jsearch_city_match = (
-            job["source"] == "JSearch"
-            and requested_city
-            and requested_city in (job["location"] or "").lower()
-        )
-        if is_jsearch_city_match and existing["source"] != "JSearch":
-            merged[key] = job
+            existing = merged[key]
+            new_matches_city = bool(requested_city) and requested_city in (job["location"] or "").lower()
+            existing_matches_city = bool(requested_city) and requested_city in (existing["location"] or "").lower()
+            if new_matches_city and not existing_matches_city:
+                merged[key] = job
 
     return [merged[k] for k in order]
 
 
 def search_jobs(query: str, location: str | None = None) -> dict:
-    """يبحث عن وظائف حقيقية عبر مصدرين مدموجين: Jooble وJSearch — فشل أي
-    مصدر واحد (مفتاح ناقص، حد سرعة، شبكة) لا يُسقط المصدر الآخر، بنفس
-    فلسفة "أبلِغ الخطأ للنموذج كنتيجة أداة عادية" (CLAUDE.md rule 6)."""
+    """يبحث عن وظائف حقيقية عبر 3 مصادر مدموجة: Jooble (أساسي أصلي)،
+    Indeed Scraper API (أساسي جديد)، وActive Jobs DB (ثانوي — يُستدعى
+    دائماً لكن نتائجه لا تُدمَج فعلياً إلا لو أرجع نتائج فعلية صالحة؛
+    "جودة الرد" هنا تعني تحديداً: رد ناجح ببنية مفهومة يحوي عنصراً واحداً
+    على الأقل بعنوان وظيفي — أي رد فاشل/فارغ/مشوَّه أصلاً يُقصى ذاتياً
+    عبر آلية الصمود بـrapidapi_client.py، فلا حاجة لمنطق فحص جودة منفصل
+    هنا). فشل أي مصدر واحد لا يُسقط البقية، بنفس فلسفة "أبلِغ الخطأ
+    للنموذج كنتيجة أداة عادية" (CLAUDE.md rule 6)."""
     jooble_jobs = _search_jooble(query, location)
-    jsearch_jobs = search_jsearch(query, location)
+    indeed_jobs = search_indeed_scraper(query, location)
+    active_jobs = search_active_jobs_db(query, location)
 
     requested_city = (location.split(",")[0].strip().lower() if location else "")
-    merged = _dedupe_merge(jooble_jobs, jsearch_jobs, requested_city)
+    merged = _dedupe_merge([jooble_jobs, indeed_jobs, active_jobs], requested_city)
 
     if not merged:
         return {
@@ -142,16 +147,17 @@ def search_jobs(query: str, location: str | None = None) -> dict:
 
     # علة حقيقية اكتُشفت بالقياس (لا افتراض) بجولة سابقة: نفس نتائج Jooble
     # بالضبط تتكرر لأي مدينة سعودية مع مسميات معينة، لأن إعلانات Jooble
-    # نفسها مُصنَّفة بمستوى الدولة فقط لا المدينة أحياناً. أُضيف JSearch
-    # كمصدر ثانٍ تحديداً لهذا — فالتوضيح هنا لم يعد يظهر لمجرد فشل Jooble
-    # وحده بمطابقة المدينة، بل فقط لو **كلا المصدرين معاً** لم يرجعا أي
-    # نتيجة تحوي اسم المدينة المطلوبة صراحةً بحقل location الفعلي.
+    # نفسها مُصنَّفة بمستوى الدولة فقط لا المدينة أحياناً. أُضيف مصدران
+    # إضافيان (Indeed Scraper، Active Jobs DB) تحديداً لهذا — فالتوضيح هنا
+    # لا يظهر لمجرد فشل مصدر واحد بمطابقة المدينة، بل فقط لو **كل
+    # المصادر الثلاثة معاً** لم ترجع أي نتيجة تحوي اسم المدينة المطلوبة
+    # صراحةً بحقل location الفعلي.
     if requested_city:
         city_matched = any(requested_city in (r["location"] or "").lower() for r in results)
         if not city_matched:
             output["note"] = (
-                f"نتائج البحث هنا (من Jooble وJSearch معاً) مُصنَّفة على مستوى "
-                f"الدولة لا المدينة تحديداً لهذا المسمى — إعلانات '{query}' "
+                f"نتائج البحث هنا (من كل مصادر البيانات المتاحة) مُصنَّفة على "
+                f"مستوى الدولة لا المدينة تحديداً لهذا المسمى — إعلانات '{query}' "
                 f"المتاحة فعلياً في '{location}' محدودة جداً بمصادر البيانات "
                 "نفسها، لذا قد تظهر نفس النتائج مع مدن أخرى قريبة بنفس الدولة. "
                 "جرّب مسمى أوسع لنتائج أكثر تحديداً جغرافياً."
