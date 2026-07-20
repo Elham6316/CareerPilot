@@ -258,7 +258,7 @@ h1, .display, .brand-name, .step-num, .count {
   /* overflow-y:auto احتياطاً بدل hidden — القص الفعلي لرسم الهيرو سابقاً
      كان بسبب هذا "hidden" يقصّ المحتوى صامتاً لو تجاوز ارتفاع 100vh
      المتاح، بدل تمرير أو تصغير سليم. */
-  overflow-y: auto;
+  overflow-y: hidden;
   overflow-x: hidden;
   border-radius: 24px;
   padding: 1rem 0;
