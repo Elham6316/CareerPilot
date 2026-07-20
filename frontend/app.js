@@ -131,9 +131,20 @@ function activatePane(service) {
 function chainToSearch(title) {
   activatePane("search");
   document.getElementById("searchTitleInput").value = title;
-  const city = document.getElementById("searchCityInput").value.trim();
-  const message = city ? `ابحث لي عن وظائف ${title} في ${city}` : `ابحث لي عن وظائف ${title}`;
-  sendMessage(message);
+  updateSearchButtonState();
+
+  const cityInput = document.getElementById("searchCityInput");
+  const city = cityInput.value.trim();
+  if (city) {
+    sendMessage(`ابحث لي عن وظائف ${title} في ${city}`);
+    return;
+  }
+
+  // المدينة فاضية — السلسلة الموجّهة تتوقف هنا بدل إطلاق بحث بلا نطاق
+  // جغرافي، وتنتظر المستخدم يكتب مدينة (زر "ابحث الآن" يبقى معطّلاً حتى
+  // تُملأ، عبر نفس تحقق updateSearchButtonState المستخدم بالمسار اليدوي).
+  cityInput.focus();
+  document.getElementById("cityHint").classList.remove("hidden");
 }
 
 function chainToJob(service, job, message) {
@@ -239,7 +250,7 @@ function setServicesEnabled(enabled) {
   document.getElementById("btnTitles").disabled = !actuallyEnabled;
   document.getElementById("searchTitleInput").disabled = !actuallyEnabled;
   document.getElementById("searchCityInput").disabled = !actuallyEnabled;
-  document.getElementById("btnSearch").disabled = !actuallyEnabled;
+  updateSearchButtonState();
 
   const hasJobs = latestJobs.length > 0;
   ["match", "improve", "letter"].forEach((prefix) => {
@@ -259,6 +270,19 @@ function setServicesEnabled(enabled) {
 
 function capitalize(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// المسمى والمدينة مطلوبان معاً قبل تفعيل "ابحث الآن" — يُستدعى من
+// setServicesEnabled() (رفع سيرة/حد الطلبات) وأيضاً من مستمعي input على
+// الحقلين مباشرة، ليبقى الزر يتحدّث فوراً أثناء الكتابة لا بعد الضغط فقط.
+function updateSearchButtonState() {
+  const titleInput = document.getElementById("searchTitleInput");
+  const cityInput = document.getElementById("searchCityInput");
+  const title = titleInput.value.trim();
+  const city = cityInput.value.trim();
+  const fieldsEnabled = !titleInput.disabled;
+  document.getElementById("btnSearch").disabled = !fieldsEnabled || !title || !city;
+  if (city) document.getElementById("cityHint").classList.add("hidden");
 }
 
 function updateJobSelects() {
@@ -586,6 +610,16 @@ function renderApplications(result, replyText) {
 // ------------------------------------------------------------------
 document.getElementById("btnTitles").addEventListener("click", () => {
   sendMessage("حلل سيرتي واقترح مسميات وظيفية تناسبني");
+});
+
+document.getElementById("searchTitleInput").addEventListener("input", updateSearchButtonState);
+document.getElementById("searchCityInput").addEventListener("input", updateSearchButtonState);
+// Enter بحقل المدينة يُطلق البحث فوراً لو الحقلان مكتملان — يكمل مسار
+// السلسلة الموجّهة (توقّفت بانتظار المدينة) بلا حاجة لضغطة إضافية على الزر.
+document.getElementById("searchCityInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !document.getElementById("btnSearch").disabled) {
+    document.getElementById("btnSearch").click();
+  }
 });
 
 document.getElementById("btnSearch").addEventListener("click", () => {
