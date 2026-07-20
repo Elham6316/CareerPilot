@@ -87,7 +87,8 @@ The loop back to **Select Tool** is what makes this an agent rather than a fixed
 
 ## Known Limitations
 
-- Jooble only returns accurate results for an English "City, Country" location format (e.g. `Riyadh, Saudi Arabia`) — the model handles this conversion automatically before calling the API, but it's a real constraint of the upstream service.
+- Job location data is often country-level (Saudi Arabia) rather than city-specific — this reflects a real gap in the free/local job-search APIs this app draws on (Jooble, Indeed Scraper, Active Jobs DB), not an application bug. City-level precision is shown whenever the underlying source actually provides it.
+- Every result links directly to the original job posting, so you can always click through and verify the exact location yourself.
 - Match scores from `evaluate_match` are LLM-generated and therefore non-deterministic — the same job/resume pair can score slightly differently across runs.
 - Each session allows one resume upload and a capped number of messages, by design — this is a demo deployment, not a persistent multi-resume workspace.
 
@@ -96,6 +97,7 @@ The loop back to **Select Tool** is what makes this an agent rather than a fixed
 - Daily automated job search delivered via email
 - LinkedIn integration
 - Skill-gap analysis against target roles
+- Integrate additional local/regional job platforms as free API access becomes available, to improve city-level location accuracy over time
 
 ## License
 
