@@ -50,6 +50,33 @@ def _clean_snippet(snippet: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+# علة حقيقية اكتُشفت بالجولة السابقة: مطابقة المدينة كانت مقارنة نصية
+# صرفة، فتفشل رغم تطابق المدينة فعلياً لو استخدم أحد المصادر (Indeed
+# تحديداً) تهجئة نقل حرفي مختلفة عن التي يُطبِّعها Gemini لطلب المستخدم
+# (مثال حي مُختبَر: نتائج "Mecca" من Indeed لم تُطابِق طلب "Makkah" رغم
+# كونهما نفس المدينة بالضبط). كل مفتاح هنا صيغة بديلة شائعة تُطابَق
+# نصياً، وقيمته الصيغة الموحَّدة (canonical) التي تُستبدَل بها قبل أي
+# مقارنة — تُطبَّق على طلب المستخدم وموقع كل نتيجة معاً بنفس الدالة، فلا
+# يهم أي جهة كتبت أياً من الصيغتين.
+CITY_ALIASES = {
+    "mecca": "makkah",
+    "medina": "madinah",
+    "al-madinah": "madinah",
+    "al madinah": "madinah",
+    "jiddah": "jeddah",
+}
+
+
+def _normalize_city(text: str) -> str:
+    """يوحّد تهجئات النقل الحرفي الشائعة لمدن سعودية داخل نص (طلب المستخدم
+    أو حقل location لنتيجة) قبل أي مقارنة تطابق مدينة — بحروف صغيرة دائماً
+    لضمان مقارنة غير حساسة لحالة الأحرف أيضاً."""
+    normalized = (text or "").lower()
+    for variant, canonical in CITY_ALIASES.items():
+        normalized = normalized.replace(variant, canonical)
+    return normalized
+
+
 def _search_jooble(query: str, location: str | None) -> list[dict]:
     """يبحث عبر Jooble فقط، ويرجع قائمة بنفس الشكل الموحَّد (لا dict كامل
     بعد الآن) — أي فشل (مفتاح ناقص، شبكة، رد غير مقروء) يُرجع قائمة فارغة
@@ -95,7 +122,9 @@ def _dedupe_merge(job_lists: list[list[dict]], requested_city: str) -> list[dict
     وجود نفس الوظيفة بأكثر من مصدر: تُفضَّل أي نسخة موقعها الفعلي يحوي
     اسم المدينة المطلوبة حرفياً (أدق جغرافياً — لا يهم أي مصدر بالتحديد،
     المعيار هو التطابق الفعلي لا اسم المصدر)، وإلا تبقى أول نسخة ظهرت
-    حسب ترتيب job_lists."""
+    حسب ترتيب job_lists. requested_city يُتوقَّع أن يصل مُطبَّعاً مسبقاً
+    (_normalize_city) من الطرف المستدعي؛ موقع كل نتيجة يُطبَّع هنا وقت
+    المقارنة نفسها."""
     merged: dict[tuple[str, str], dict] = {}
     order: list[tuple[str, str]] = []
 
@@ -108,8 +137,8 @@ def _dedupe_merge(job_lists: list[list[dict]], requested_city: str) -> list[dict
                 continue
 
             existing = merged[key]
-            new_matches_city = bool(requested_city) and requested_city in (job["location"] or "").lower()
-            existing_matches_city = bool(requested_city) and requested_city in (existing["location"] or "").lower()
+            new_matches_city = bool(requested_city) and requested_city in _normalize_city(job["location"])
+            existing_matches_city = bool(requested_city) and requested_city in _normalize_city(existing["location"])
             if new_matches_city and not existing_matches_city:
                 merged[key] = job
 
@@ -129,7 +158,7 @@ def search_jobs(query: str, location: str | None = None) -> dict:
     indeed_jobs = search_indeed_scraper(query, location)
     active_jobs = search_active_jobs_db(query, location)
 
-    requested_city = (location.split(",")[0].strip().lower() if location else "")
+    requested_city = _normalize_city(location.split(",")[0].strip()) if location else ""
     merged = _dedupe_merge([jooble_jobs, indeed_jobs, active_jobs], requested_city)
 
     if not merged:
@@ -153,7 +182,7 @@ def search_jobs(query: str, location: str | None = None) -> dict:
     # المصادر الثلاثة معاً** لم ترجع أي نتيجة تحوي اسم المدينة المطلوبة
     # صراحةً بحقل location الفعلي.
     if requested_city:
-        city_matched = any(requested_city in (r["location"] or "").lower() for r in results)
+        city_matched = any(requested_city in _normalize_city(r["location"]) for r in results)
         if not city_matched:
             output["note"] = (
                 f"نتائج البحث هنا (من كل مصادر البيانات المتاحة) مُصنَّفة على "

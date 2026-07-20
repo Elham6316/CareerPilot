@@ -68,7 +68,12 @@ def search_indeed_scraper(query: str, location: str | None = None) -> list[dict]
     }
 
     try:
-        response = requests.post(INDEED_SCRAPER_API_URL, headers=headers, json=payload, timeout=20)
+        # 20s كان يقطع طلبات حقيقية ناجحة عمداً — Indeed Scraper يكشط
+        # صفحات حية فعلياً (لا بيانات مُخزَّنة مسبقاً)، وزمن استجابته
+        # الفعلي المُلاحَظ يقترب من/يتجاوز 20s أحياناً حتى لو انتهى بنجاح
+        # (تحقّق حي: نفس الاستعلام فشل بمهلة 20s مرتين متتاليتين ثم نجح
+        # فوراً باستدعاء منفصل بلا أي تغيير آخر). 35s هامش أكثر واقعية.
+        response = requests.post(INDEED_SCRAPER_API_URL, headers=headers, json=payload, timeout=35)
         response.raise_for_status()
         data = response.json()
     except requests.RequestException as exc:
