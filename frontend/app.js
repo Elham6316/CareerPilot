@@ -484,9 +484,16 @@ function renderJobs(result, replyText) {
     </div>`
     )
     .join("");
+  // result.note (من tools/job_search.py): يظهر فقط لو نتائج Jooble لهذا
+  // المسمى مُصنَّفة على مستوى الدولة لا المدينة تحديداً — بلا هذا السطر
+  // يبقى الحقل موجوداً بالبيانات لكن غير مرئي للمستخدم إطلاقاً، فيبدو
+  // البحث "معطوباً" (تكرار نفس النتائج) بدل توضيح أنه قيد فعلي بمصدر
+  // البيانات نفسه. نفس كلاس legitimacy-notice الموجود أصلاً — لا CSS جديد.
+  const noteHtml = result.note ? `<p class="legitimacy-notice">${escapeHtml(result.note)}</p>` : "";
   container.innerHTML = `
     <div class="jobs-list">${cards}</div>
-    <p class="legitimacy-notice">تحقق من شرعية الشركة قبل التقديم — النتائج مستمدة من محرك تجميع (Jooble).</p>`;
+    <p class="legitimacy-notice">تحقق من شرعية الشركة قبل التقديم — النتائج مستمدة من محرك تجميع (Jooble).</p>
+    ${noteHtml}`;
   container.querySelectorAll(".job-inline-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const job = jobs[Number(btn.dataset.index)];

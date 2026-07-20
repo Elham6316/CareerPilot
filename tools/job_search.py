@@ -88,4 +88,31 @@ def search_jobs(query: str, location: str | None = None) -> dict:
         }
         for job in jobs[:10]
     ]
-    return {"jobs": results, "total_count": data.get("totalCount", len(results))}
+
+    output = {"jobs": results, "total_count": data.get("totalCount", len(results))}
+
+    # علة حقيقية اكتُشفت بالقياس (لا افتراض): نفس النتائج بالضبط تتكرر لأي
+    # مدينة سعودية مع مسميات معينة (مثال فعلي مُختبَر: "Backend Developer").
+    # السبب ليس خطأً بكودنا — طلبات مباشرة لـJooble خارج تطبيقنا تماماً
+    # (بايلود location مختلف فعلياً في كل مرة) أثبتت أن الفلترة الجغرافية
+    # تعمل بشكل صحيح عموماً (مدن أخرى بدول غنية بالبيانات كنيويورك/طوكيو
+    # ترجع نتائج مختلفة فعلاً)، لكن إعلانات Jooble نفسها لهذا المسمى بهذي
+    # الدولة قليلة جداً ومُصنَّفة بمستوى الدولة فقط ("Saudi Arabia") لا
+    # المدينة تحديداً — فلا يوجد ما تُفلتِر Jooble نتائجه أدق من ذلك. نتحقق
+    # هنا مباشرة: هل حقل location الفعلي لأي نتيجة راجعة يحوي اسم المدينة
+    # المطلوبة؟ لو لا، نضيف توضيحاً صريحاً بدل ترك المستخدم يظن أن البحث
+    # معطوب.
+    if location:
+        requested_city = location.split(",")[0].strip().lower()
+        city_matched = requested_city and any(
+            requested_city in (r["location"] or "").lower() for r in results
+        )
+        if requested_city and not city_matched:
+            output["note"] = (
+                f"نتائج Jooble هنا مُصنَّفة على مستوى الدولة لا المدينة تحديداً لهذا "
+                f"المسمى — إعلانات '{query}' المتاحة فعلياً في '{location}' محدودة "
+                "جداً بمصدر البيانات نفسه (Jooble)، لذا قد تظهر نفس النتائج مع مدن "
+                "أخرى قريبة بنفس الدولة. جرّب مسمى أوسع لنتائج أكثر تحديداً جغرافياً."
+            )
+
+    return output
