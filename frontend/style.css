@@ -241,7 +241,7 @@ h1, .display, .brand-name, .step-num, .count {
   flex: 1;
   height: 100vh;
   min-width: 0;
-  padding: 24px;
+  padding: 1px 24px 1px 1px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
