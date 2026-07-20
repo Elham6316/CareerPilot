@@ -2,14 +2,20 @@
 
 *An AI agent that searches, evaluates, and writes on your behalf — always with your approval.*
 
-![Python](https://img.shields.io/badge/Python-3.14-blue?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi&logoColor=white)
-![Gemini API](https://img.shields.io/badge/Gemini%20API-8E75B2?logo=google&logoColor=white)
-![Live](https://img.shields.io/badge/Live%20Demo-Online-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+<p align="center">
 
-**[🟢 Live Demo](https://careerpilot-2hwg.onrender.com/)** &nbsp;·&nbsp; **📦 Tech: Python · FastAPI · Gemini API**
+<a href="https://careerpilot-2hwg.onrender.com/">
+<img src="https://img.shields.io/badge/🚀_Launch_CareerPilot-Live_Demo-8B5CF6?style=for-the-badge" />
+</a>
 
+<br><br>
+
+<img src="https://img.shields.io/badge/Python-3.14-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
+<img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white"/>
+<img src="https://img.shields.io/badge/Gemini_API-8E75B2?style=for-the-badge&logo=google&logoColor=white"/>
+<img src="https://img.shields.io/badge/License-MIT-F7DF1E?style=for-the-badge"/>
+
+</p>
 Job searching is fragmented and manual — you juggle multiple sites, guess whether a job is actually a good fit, write every cover letter from scratch, and lose track of what you already applied to. CareerPilot is a single AI agent that understands a natural-language request and decides, on its own, which of 7 tools to call and in what order — never taking a final action (logging an application, finalizing a resume edit) without your explicit approval.
 
 ## Overview
