@@ -9,8 +9,10 @@ import requests
 from google.genai import types
 
 from tools.gemini_client import MODEL_NAME, get_client
+from tools.jsearch_client import search_jsearch
 
 JOOBLE_API_URL = "https://jooble.org/api/{key}"
+MAX_COMBINED_RESULTS = 10
 
 SUGGEST_TITLES_PROMPT = """حلّل نص السيرة الذاتية التالي واقترح 3 إلى 5 مسميات
 وظيفية مناسبة لصاحبها بناءً على خبراته ومهاراته الفعلية الظاهرة في النص.
@@ -48,11 +50,15 @@ def _clean_snippet(snippet: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def search_jobs(query: str, location: str | None = None) -> dict:
-    """يبحث عن وظائف حقيقية عبر Jooble API بناءً على مسمى وظيفي وموقع اختياري."""
+def _search_jooble(query: str, location: str | None) -> list[dict]:
+    """يبحث عبر Jooble فقط، ويرجع قائمة بنفس الشكل الموحَّد (لا dict كامل
+    بعد الآن) — أي فشل (مفتاح ناقص، شبكة، رد غير مقروء) يُرجع قائمة فارغة
+    مع تسجيل السبب بدل رفع استثناء، بنفس نمط jsearch_client.search_jsearch،
+    فلا يُسقِط مصدر واحد فاشل تدفق البحث الموحَّد كاملاً."""
     api_key = os.environ.get("JOOBLE_API_KEY")
     if not api_key:
-        return {"error": "JOOBLE_API_KEY غير موجود في .env"}
+        print("[job_search] JOOBLE_API_KEY غير موجود في .env — تخطي مصدر Jooble.")
+        return []
 
     payload = {"keywords": query}
     if location:
@@ -63,12 +69,65 @@ def search_jobs(query: str, location: str | None = None) -> dict:
         response.raise_for_status()
         data = response.json()
     except requests.RequestException as exc:
-        return {"error": f"فشل الاتصال بـ Jooble API: {exc}"}
+        print(f"[job_search] فشل الاتصال بـ Jooble API: {exc}")
+        return []
     except ValueError as exc:
-        return {"error": f"رد Jooble غير قابل للقراءة: {exc}"}
+        print(f"[job_search] رد Jooble غير قابل للقراءة: {exc}")
+        return []
 
     jobs = data.get("jobs", [])
-    if not jobs:
+    return [
+        {
+            "title": job.get("title", ""),
+            "company": job.get("company", ""),
+            "location": job.get("location", ""),
+            "link": job.get("link", ""),
+            "snippet": _clean_snippet(job.get("snippet", "")),
+            "source": "Jooble",
+        }
+        for job in jobs
+    ]
+
+
+def _dedupe_merge(jooble_jobs: list[dict], jsearch_jobs: list[dict], requested_city: str) -> list[dict]:
+    """يدمج القائمتين ويُزيل التكرار بمفتاح (العنوان، الشركة) بحروف صغيرة.
+    عند وجود نفس الوظيفة بالمصدرين: تُفضَّل نسخة JSearch لو موقعها الفعلي
+    يحوي اسم المدينة المطلوبة حرفياً (أدق جغرافياً من تصنيف Jooble القُطري
+    أحياناً كما وُثِّق سابقاً)، وإلا تبقى أول نسخة ظهرت (Jooble، لأنها
+    المصدر الأول بترتيب الدمج أدناه)."""
+    merged: dict[tuple[str, str], dict] = {}
+    order: list[tuple[str, str]] = []
+
+    for job in [*jooble_jobs, *jsearch_jobs]:
+        key = (job["title"].strip().lower(), job["company"].strip().lower())
+        if key not in merged:
+            merged[key] = job
+            order.append(key)
+            continue
+
+        existing = merged[key]
+        is_jsearch_city_match = (
+            job["source"] == "JSearch"
+            and requested_city
+            and requested_city in (job["location"] or "").lower()
+        )
+        if is_jsearch_city_match and existing["source"] != "JSearch":
+            merged[key] = job
+
+    return [merged[k] for k in order]
+
+
+def search_jobs(query: str, location: str | None = None) -> dict:
+    """يبحث عن وظائف حقيقية عبر مصدرين مدموجين: Jooble وJSearch — فشل أي
+    مصدر واحد (مفتاح ناقص، حد سرعة، شبكة) لا يُسقط المصدر الآخر، بنفس
+    فلسفة "أبلِغ الخطأ للنموذج كنتيجة أداة عادية" (CLAUDE.md rule 6)."""
+    jooble_jobs = _search_jooble(query, location)
+    jsearch_jobs = search_jsearch(query, location)
+
+    requested_city = (location.split(",")[0].strip().lower() if location else "")
+    merged = _dedupe_merge(jooble_jobs, jsearch_jobs, requested_city)
+
+    if not merged:
         return {
             "jobs": [],
             "message": (
@@ -78,41 +137,24 @@ def search_jobs(query: str, location: str | None = None) -> dict:
             ),
         }
 
-    results = [
-        {
-            "title": job.get("title", ""),
-            "company": job.get("company", ""),
-            "location": job.get("location", ""),
-            "link": job.get("link", ""),
-            "snippet": _clean_snippet(job.get("snippet", "")),
-        }
-        for job in jobs[:10]
-    ]
+    results = merged[:MAX_COMBINED_RESULTS]
+    output = {"jobs": results, "total_count": len(merged)}
 
-    output = {"jobs": results, "total_count": data.get("totalCount", len(results))}
-
-    # علة حقيقية اكتُشفت بالقياس (لا افتراض): نفس النتائج بالضبط تتكرر لأي
-    # مدينة سعودية مع مسميات معينة (مثال فعلي مُختبَر: "Backend Developer").
-    # السبب ليس خطأً بكودنا — طلبات مباشرة لـJooble خارج تطبيقنا تماماً
-    # (بايلود location مختلف فعلياً في كل مرة) أثبتت أن الفلترة الجغرافية
-    # تعمل بشكل صحيح عموماً (مدن أخرى بدول غنية بالبيانات كنيويورك/طوكيو
-    # ترجع نتائج مختلفة فعلاً)، لكن إعلانات Jooble نفسها لهذا المسمى بهذي
-    # الدولة قليلة جداً ومُصنَّفة بمستوى الدولة فقط ("Saudi Arabia") لا
-    # المدينة تحديداً — فلا يوجد ما تُفلتِر Jooble نتائجه أدق من ذلك. نتحقق
-    # هنا مباشرة: هل حقل location الفعلي لأي نتيجة راجعة يحوي اسم المدينة
-    # المطلوبة؟ لو لا، نضيف توضيحاً صريحاً بدل ترك المستخدم يظن أن البحث
-    # معطوب.
-    if location:
-        requested_city = location.split(",")[0].strip().lower()
-        city_matched = requested_city and any(
-            requested_city in (r["location"] or "").lower() for r in results
-        )
-        if requested_city and not city_matched:
+    # علة حقيقية اكتُشفت بالقياس (لا افتراض) بجولة سابقة: نفس نتائج Jooble
+    # بالضبط تتكرر لأي مدينة سعودية مع مسميات معينة، لأن إعلانات Jooble
+    # نفسها مُصنَّفة بمستوى الدولة فقط لا المدينة أحياناً. أُضيف JSearch
+    # كمصدر ثانٍ تحديداً لهذا — فالتوضيح هنا لم يعد يظهر لمجرد فشل Jooble
+    # وحده بمطابقة المدينة، بل فقط لو **كلا المصدرين معاً** لم يرجعا أي
+    # نتيجة تحوي اسم المدينة المطلوبة صراحةً بحقل location الفعلي.
+    if requested_city:
+        city_matched = any(requested_city in (r["location"] or "").lower() for r in results)
+        if not city_matched:
             output["note"] = (
-                f"نتائج Jooble هنا مُصنَّفة على مستوى الدولة لا المدينة تحديداً لهذا "
-                f"المسمى — إعلانات '{query}' المتاحة فعلياً في '{location}' محدودة "
-                "جداً بمصدر البيانات نفسه (Jooble)، لذا قد تظهر نفس النتائج مع مدن "
-                "أخرى قريبة بنفس الدولة. جرّب مسمى أوسع لنتائج أكثر تحديداً جغرافياً."
+                f"نتائج البحث هنا (من Jooble وJSearch معاً) مُصنَّفة على مستوى "
+                f"الدولة لا المدينة تحديداً لهذا المسمى — إعلانات '{query}' "
+                f"المتاحة فعلياً في '{location}' محدودة جداً بمصادر البيانات "
+                "نفسها، لذا قد تظهر نفس النتائج مع مدن أخرى قريبة بنفس الدولة. "
+                "جرّب مسمى أوسع لنتائج أكثر تحديداً جغرافياً."
             )
 
     return output
